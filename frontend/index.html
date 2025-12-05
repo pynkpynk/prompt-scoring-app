@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Prompt Scoring</title>
+
+    <!-- ピクセル風フォント -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+
+    <!-- reCAPTCHA（今はデモなので site key エラーは無視でOK） -->
+    <script
+      src="https://www.google.com/recaptcha/api.js"
+      async
+      defer
+    ></script>
+  </head>
+  <body>
+    <div class="app-wrapper">
+      <div class="app-card">
+        <header class="app-header">
+          <h1 class="app-title">Prompt Scoring</h1>
+          <p class="app-subtitle">
+            LLM向けプロンプトを <span>5軸スコアリング</span> ＋ 日英コメントでフィードバック /
+            Score your LLM prompts on 5 dimensions with bilingual feedback
+          </p>
+        </header>
+
+        <main>
+          <label for="prompt-input" class="label-title">
+            ✏️ プロンプトを入力 / Enter your prompt
+          </label>
+
+          <textarea
+            id="prompt-input"
+            class="prompt-input"
+            placeholder="例: Python初心者向けに、FastAPIで簡単なAPIを作る手順を3ステップで説明して。 / Example: Explain in 3 steps how a Python beginner can build a simple API with FastAPI."
+          ></textarea>
+
+          <div class="controls-row">
+            <div
+              class="g-recaptcha"
+              data-sitekey="YOUR_RECAPTCHA_SITE_KEY"
+            ></div>
+
+            <button id="send-btn" class="primary-button">
+              Start! / Score Prompt
+            </button>
+          </div>
+
+          <p class="helper-text">
+            デモ版では reCAPTCHA は任意です。 / In this demo, reCAPTCHA is optional.
+          </p>
+
+          <!-- ⇩ JS がここを書き換えるので、初期状態は空でOK -->
+          <section id="result" class="result-card">
+            <!-- results will be injected here -->
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

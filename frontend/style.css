@@ -1,0 +1,322 @@
+/* ==== 全画面レイアウト & 背景 ==== */
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #4f46e5, #1e1b4b 45%, #020617 90%);
+  font-family: "DotGothic16", "Press Start 2P", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #e5e7eb;
+}
+
+/* アプリ全体のラッパー（中央寄せ） */
+.app-wrapper {
+  width: 100%;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* 中央のカード */
+.app-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: rgba(15, 23, 42, 0.96);
+  border-radius: 18px;
+  padding: 24px 28px 28px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(129, 140, 248, 0.5);
+}
+
+/* ヘッダー */
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.app-title {
+  margin: 0 0 10px;
+  font-family: "Press Start 2P", system-ui;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #e0e7ff;
+  text-shadow: 0 0 6px rgba(96, 165, 250, 0.7);
+}
+
+.app-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #c4b5fd;
+}
+
+.app-subtitle span {
+  color: #60a5fa;
+}
+
+/* 入力エリア */
+.label-title {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #a5b4fc;
+}
+
+.prompt-input {
+  width: 100%;
+  min-height: 140px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.prompt-input::placeholder {
+  color: #64748b;
+}
+
+/* reCAPTCHA + ボタン行 */
+.controls-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.primary-button {
+  padding: 10px 22px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: "Press Start 2P", system-ui;
+  letter-spacing: 1px;
+  background: linear-gradient(135deg, #4f46e5, #a855f7);
+  color: white;
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.55);
+  transition: transform 0.08s ease-out, box-shadow 0.08s ease-out,
+    filter 0.08s ease-out;
+}
+
+.primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.75);
+  filter: brightness(1.05);
+}
+
+.primary-button:active {
+  transform: translateY(0px);
+  box-shadow: 0 5px 14px rgba(79, 70, 229, 0.7);
+}
+
+/* 補足テキスト */
+.helper-text {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* 結果カード */
+.result-card {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: radial-gradient(circle at top left, #1d2448, #020617);
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  min-height: 40px;
+  font-size: 13px;
+}
+
+/* スコアのグリッド（5項目を横1列） */
+.score-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* PCでは5列固定 */
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+/* ★カードの高さと余白を少し増やす */
+.score-item {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 14px;
+  padding: 14px 16px 12px;          /* 上の余白多め */
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;   /* ラベルは上、数字は下に揃える */
+  min-height: 120px;                /* 高さUPで揃えやすく */
+}
+
+.score-label {
+  font-size: 10px;                  /* 少し小さく */
+  line-height: 1.4;                 /* 行間を詰める */
+  color: #9ca3af;
+  margin-bottom: 6px;
+}
+
+/* 各スコアの数字表示 */
+.score-value {
+  font-size: 24px;
+  font-family: "Press Start 2P", system-ui;
+  line-height: 1;                /* 行の高さ固定 */
+  display: inline-block;         /* 幅固定のため */
+  min-width: 3ch;                /* 最大3桁分の幅を確保（0〜100想定） */
+  text-align: right;             /* 右寄せで揺れを抑える */
+  vertical-align: bottom;        /* ベースラインを揃える */
+  transform: translateZ(0);      /* 再描画を安定させる */
+}
+
+
+/* スコア値の色分け */
+.score-low {
+  color: #f97373;   /* 赤系 0–49 */
+}
+
+.score-mid {
+  color: #e5e7eb;   /* 白系 50–79 */
+}
+
+.score-high {
+  color: #4ade80;   /* 緑系 80–100 */
+}
+
+
+
+/* セクションタイトル */
+.result-card h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #e0f2fe;
+}
+
+.result-card h3 {
+  margin: 12px 0 4px;
+  font-size: 13px;
+  color: #bfdbfe;
+}
+
+.result-card p {
+  margin: 2px 0 4px;
+}
+
+/* 改善プロンプト */
+pre {
+  white-space: pre-wrap;
+  background: rgba(15, 23, 42, 0.9);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+/* ローディング */
+.loader-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loader {
+  border: 4px solid #1f2937;
+  border-top: 4px solid #60a5fa;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* スマホ対応 */
+@media (max-width: 640px) {
+  .app-card {
+    padding: 18px 16px 20px;
+  }
+  .app-title {
+    font-size: 18px;
+  }
+  .controls-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .primary-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 900px) {
+  .score-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+/* Overall 専用カード */
+.overall-wrapper {
+  margin-top: 4px;
+}
+.overall-card {
+  margin-top: 8px;
+  padding: 18px 20px;     /* ちょい増やす */
+  border-radius: 16px;
+  background: radial-gradient(circle at top left, #312e81, #020617);
+  border: 1px solid rgba(244, 244, 245, 0.55);
+  box-shadow: 0 0 20px rgba(129, 140, 248, 0.65);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.overall-label {
+  font-size: 13px;
+  color: #e5e7eb;
+}
+
+/* Overall の数字表示 */
+.overall-value {
+  font-size: 30px;
+  font-family: "Press Start 2P", system-ui;
+  line-height: 1;
+  display: inline-block;
+  min-width: 3ch;             /* 0〜100 の3桁ぶん幅を確保 */
+  text-align: right;
+  vertical-align: bottom;
+  transform: translateZ(0);   /* ブラウザ側の最適化 */
+  transform-origin: center center;
+}
+
+/* ★ アニメーション中のクラス（overall-valueと併用） */
+.overall-value.overall-animating {
+  animation: overall-pulse 0.8s ease-in-out 3;  /* 3回ポンポンっと */
+}
+
+/* ★ 拡大して光るアニメーション */
+@keyframes overall-pulse {
+  0% {
+    transform: translateZ(0) scale(1);
+    text-shadow: none;
+  }
+  40% {
+    transform: translateZ(0) scale(1.18);
+    text-shadow: 0 0 12px rgba(96, 165, 250, 0.9);
+  }
+  100% {
+    transform: translateZ(0) scale(1);
+    text-shadow: none;
+  }
+}
