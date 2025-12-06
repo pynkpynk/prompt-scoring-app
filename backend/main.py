@@ -1,11 +1,9 @@
-from fastapi import FastAPI
-from models import PromptRequest, PromptScore
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from models import PromptRequest, PromptScore
-from llm_scoring import score_prompt_with_llm
+from .models import PromptRequest, PromptScore
+from .llm_scoring import score_prompt_with_llm
+
 
 app = FastAPI(title="Prompt Scoring API v1 (LLM powered)")
 
@@ -16,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/health")
 def health_check():
@@ -31,7 +30,6 @@ def score_prompt(req: PromptRequest) -> PromptScore:
         result = score_prompt_with_llm(req.prompt)
         return result
     except Exception as e:
-        # 本番ならログ出力などする
         raise HTTPException(
             status_code=500,
             detail=f"Failed to score prompt via LLM: {e}",
