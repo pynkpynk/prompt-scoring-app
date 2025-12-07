@@ -16,5 +16,3 @@ class PromptScore(BaseModel):
     comment_ja: str
     improved_prompt_ja: str
     improved_prompt_en: str
-
-

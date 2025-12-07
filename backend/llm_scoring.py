@@ -4,10 +4,8 @@ from typing import Dict, Any
 from openai import OpenAI
 from .models import PromptScore
 
-# OpenAIクライアント
 client = OpenAI()
 
-# 使用するモデル名
 MODEL_NAME = "gpt-5-mini"
 
 SYSTEM_PROMPT = """
@@ -207,7 +205,6 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
     if not s:
         raise ValueError("LLM returned empty content (only whitespace)")
 
-    # まず素直に
     try:
         return json.loads(s)
     except json.JSONDecodeError:
@@ -218,14 +215,14 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
             if cleaned.lower().startswith("json"):
                 cleaned = cleaned[4:].strip()
 
-        # 先頭の { 〜 最後の } までを抜き出して再トライ
+        # 最初と最後の { ... } 部分だけを抽出してパースを試みる
         start = cleaned.find("{")
         end = cleaned.rfind("}")
         if start != -1 and end != -1 and end > start:
             candidate = cleaned[start : end + 1]
             return json.loads(candidate)
 
-        # ここまで来たら完全に JSON でない
+        
         raise ValueError(f"LLM returned non-JSON content: {s}")
 
 
@@ -238,7 +235,7 @@ def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
         # GPT-5 系は reasoning にもトークンを使うので、少し多めに確保する
         max_completion_tokens=1200,
         # 「考える量」を抑えて、空レスポンスを防ぎつつ速度も上げる
-        reasoning_effort="low",   # または "minimal"
+        reasoning_effort="low",   
         # 出力の冗長さも抑える（省略可だけど付けておくと安定しやすい）
         verbosity="low",
         seed=42,
