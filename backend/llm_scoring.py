@@ -1,18 +1,23 @@
 import json
+import os
 from typing import Dict, Any
 
-import os
 from openai import OpenAI
 from .models import PromptScore
 
+# === OpenAI クライアントの初期化 ===
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
-    raise RuntimeError("OPENAI_API_KEY is not set in environment")
+    # HF Spaces のログにも出るように、メッセージをはっきりさせる
+    raise RuntimeError(
+        "OPENAI_API_KEY is not set in environment. "
+        "Set it in your Hugging Face Space settings (Secrets) or local .env."
+    )
 
 client = OpenAI(api_key=api_key)
 
-
 MODEL_NAME = "gpt-5-mini"
+
 
 SYSTEM_PROMPT = """
 You are an expert prompt engineer and prompt quality evaluator.
@@ -21,13 +26,13 @@ You MUST always respond with a single valid JSON object and nothing else.
 - Do NOT add any explanation before or after the JSON.
 - Do NOT wrap the JSON in code fences (no ```json).
 - All natural language text MUST be inside JSON string values.
-- Markdown is allowed **inside** string values (e.g., bullet lists, headings),
+- Markdown is allowed inside string values (e.g., bullet lists, headings),
   but the overall response must remain valid JSON.
 
 # 1. Goal
 
 Given a single user prompt (in any language), you must:
-1) evaluate its quality on 5 metrics, and  
+1) evaluate its quality on 5 metrics, and
 2) propose improved versions of the prompt in both English and Japanese.
 
 Your evaluation should be consistent, reproducible, and practically useful for real LLM usage.
@@ -49,7 +54,7 @@ Use integer scores only (no decimals).
 
 You must also output "overall", an independent holistic score from 0 to 100 (integer).
 
-"overall" is NOT a mathematical average of the 5 metrics.  
+"overall" is NOT a mathematical average of the 5 metrics.
 It should reflect:
 
 - how effective the prompt is for real LLM usage,
@@ -69,9 +74,9 @@ Rough bands (for your internal calibration, do NOT output these labels):
 
 You must propose improved versions of the user’s prompt:
 
-- improved_prompt_en:  
+- improved_prompt_en:
   A refined English version of the original prompt, ready to paste into an LLM.
-- improved_prompt_ja:  
+- improved_prompt_ja:
   A refined Japanese version of the original prompt, ready to paste into an LLM.
 
 Both improved prompts MUST:
@@ -83,26 +88,26 @@ Both improved prompts MUST:
 You MAY use Markdown formatting inside these strings
 (e.g., headings, bullet lists, numbered steps).
 
-# 5. Feedback comments (Markdown allowed, 改善案メイン)
+# 5. Feedback comments (Markdown allowed, focus on improvements)
 
 You must provide feedback in both English and Japanese:
 
-- comment_en:  
+- comment_en:
   A short explanation in English (2–5 sentences or a short Markdown list) that:
   - briefly summarizes the main strengths of the original prompt, and
   - focuses on concrete improvement tips (e.g., in bullet points).
 
-- comment_ja:  
+- comment_ja:
   The same content, translated into natural, fluent Japanese.
-  You may use Markdown (e.g., 「- 箇条書き」) to show改善ポイント.
+  You may use Markdown (e.g., bullet lists) to highlight改善ポイント.
 
 Examples of good content style for comments (conceptual, do NOT copy):
 
 - comment_en:
-  "- Strength: clearly states the task and audience.\n- Improvement: specify desired length and tone.\n- Improvement: define output format (e.g., bullet list, JSON)."
+  "- Strength: clearly states the task and audience.\n- Improvement: specify desired length and tone.\n- Improvement: define output format (e.g., bullet list etc...)."
 
 - comment_ja:
-  "- 良い点: タスクと対象読者が明確です。\n- 改善点: 希望する文量やトーンを指定するとより安定します。\n- 改善点: 出力形式（箇条書き・JSONなど）を明示してください。"
+  "- 良い点: タスクと対象読者が明確です。\n- 改善点: 希望する文量やトーンを指定するとより安定します。\n- 改善点: 出力形式（箇条書きなど）を明示してください。"
 
 # 6. Safety
 
@@ -114,7 +119,7 @@ Examples of good content style for comments (conceptual, do NOT copy):
 
 # 7. Output rules (VERY IMPORTANT)
 
-You MUST output **JSON ONLY**, with no extra text.
+You MUST output JSON ONLY, with no extra text.
 
 The JSON must have exactly these keys and structure:
 
@@ -139,49 +144,48 @@ Additional rules:
 - All line breaks, bullet lists, and Markdown must be inside string values.
 """
 
+
 def _parse_json_text(text: str) -> Dict[str, Any]:
     """
-    モデルから返ってきたテキストを JSON としてパースする。
-    （コードブロックや前後のゴミが混ざっても最低限リカバリする）
+    Parse the model output as JSON.
+    If there are code fences or extra text, try to recover the JSON object.
     """
     s = (text or "").strip()
     if not s:
         raise ValueError("LLM returned empty content (only whitespace)")
 
+    # First, try direct JSON
     try:
         return json.loads(s)
     except json.JSONDecodeError:
-        # ```json ... ``` で返ってきた場合を剥がす
-        cleaned = s
-        if cleaned.startswith("```"):
-            cleaned = cleaned.strip("`").strip()
-            if cleaned.lower().startswith("json"):
-                cleaned = cleaned[4:].strip()
+        pass
 
-        # 最初と最後の { ... } 部分だけを抽出してパースを試みる
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start != -1 and end != -1 and end > start:
-            candidate = cleaned[start : end + 1]
-            return json.loads(candidate)
+    # Strip ```json ... ``` style fences if present
+    cleaned = s
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`").strip()
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:].strip()
 
-        
-        raise ValueError(f"LLM returned non-JSON content: {s}")
+    # Extract the first {...} block
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidate = cleaned[start : end + 1]
+        return json.loads(candidate)
+
+    # Give up if we still can't parse
+    raise ValueError(f"LLM returned non-JSON content: {s}")
 
 
 def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
     """
-    LLMを呼び出して、プロンプトのスコアリング結果(JSON相当の dict)を返す。
+    Call the LLM and return the scoring result as a dict.
     """
     response = client.chat.completions.create(
         model=MODEL_NAME,
-        # GPT-5 系は reasoning にもトークンを使うので、少し多めに確保する
-        max_completion_tokens=1200,
-        # 「考える量」を抑えて、空レスポンスを防ぎつつ速度も上げる
-        reasoning_effort="low",   
-        # 出力の冗長さも抑える（省略可だけど付けておくと安定しやすい）
-        verbosity="low",
-        seed=42,
+        # Force the model to return a JSON object
+        response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
@@ -189,12 +193,13 @@ def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
     )
 
     message = response.choices[0].message
-    content = message.content
 
-    # content は str / list 両対応
+    # content is usually a string when using response_format=json_object
+    content = message.content
     if isinstance(content, str):
         text = content
     elif isinstance(content, list):
+        # Fallback: concatenate text parts if the SDK returns a content list
         parts = []
         for part in content:
             if getattr(part, "type", None) == "text":
@@ -205,26 +210,27 @@ def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
     else:
         text = ""
 
+    if not text or text.strip() == "":
+        raise ValueError("LLM returned empty content (only whitespace)")
+
     data = _parse_json_text(text)
     return data
 
 
 def score_prompt_with_llm(user_prompt: str) -> PromptScore:
     """
-    user_prompt を LLM に渡して、PromptScore オブジェクトとして返す。
+    Call the LLM with user_prompt and map the JSON result into PromptScore.
     """
     data = call_llm_for_scoring(user_prompt)
 
     def to_int_0_100(value: Any) -> int:
         """
-        任意の値を 0〜100 の int に正規化。
-        想定外の値の場合は 0 を返す。
+        Normalize any numeric value into an int between 0 and 100.
         """
         try:
             v = float(value)
         except (TypeError, ValueError):
             return 0
-
         v = round(v)
         return max(0, min(100, int(v)))
 
