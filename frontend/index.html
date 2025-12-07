@@ -3,21 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <title>Prompt Scoring</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- ピクセル風フォント -->
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/static/style.css" />
 
-    <link rel="stylesheet" href="style.css" />
-
-    <!-- reCAPTCHA（今はデモなので site key エラーは無視でOK） -->
-    <script
-      src="https://www.google.com/recaptcha/api.js"
-      async
-      defer
-    ></script>
   </head>
   <body>
     <div class="app-wrapper">
@@ -48,7 +41,7 @@
             ></div>
 
             <button id="send-btn" class="primary-button">
-              Start! 
+              Start!
             </button>
           </div>
 
@@ -56,14 +49,13 @@
             デモ版では reCAPTCHA は任意です。 / In this demo, reCAPTCHA is optional.
           </p>
 
-          <!-- ⇩ JS がここを書き換えるので、初期状態は空でOK -->
           <section id="result" class="result-card">
-            <!-- results will be injected here -->
+            <!-- JS がここに結果カードを描画 -->
           </section>
         </main>
       </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="/static/app.js"></script>
   </body>
 </html>
