@@ -93,6 +93,6 @@ prompt_scoring_app/
 # 🙌 Author
 
 - Koki Sasaki 
-- LinkedIn:linkedin.com/in/koki-sasaki-89ba43325
+- LinkedIn:https://www.linkedin.com/in/koki-sasaki-89ba43325/
 
 ---  
