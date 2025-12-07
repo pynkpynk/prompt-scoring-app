@@ -4,17 +4,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from .models import PromptRequest, PromptScore
 from .llm_scoring import score_prompt_with_llm
 
-
 app = FastAPI(title="Prompt Scoring API v1 (LLM powered)")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:8080"],
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/health")
 def health_check():

@@ -1,10 +1,16 @@
 import json
 from typing import Dict, Any
 
+import os
 from openai import OpenAI
 from .models import PromptScore
 
-client = OpenAI()
+api_key = os.environ.get("OPENAI_API_KEY")
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY is not set in environment")
+
+client = OpenAI(api_key=api_key)
+
 
 MODEL_NAME = "gpt-5-mini"
 
