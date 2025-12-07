@@ -73,18 +73,20 @@ Hugging Face Space で実際に動作を試せます：
 
 # 🧩 Project Structure
 
+```
 prompt_scoring_app/
 ├── app.py
 ├── backend/
-│ ├── main.py
-│ ├── models.py
-│ └── llm_scoring.py
+│   ├── main.py
+│   ├── models.py
+│   └── llm_scoring.py
 ├── frontend/
-│ ├── index.html
-│ ├── style.css
-│ └── script.js
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
 ├── requirements.txt
 └── README.md
+```
 
 ---
 
