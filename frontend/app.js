@@ -6,6 +6,13 @@ function getScoreClass(score) {
   return "score-high";
 }
 
+// ===== API ベースURLを環境ごとに切り替え =====
+const API_BASE =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:8000" // ローカル開発用（FastAPI を :8000 で起動している前提）
+    : "";                     // HF Spaces など本番では同一オリジンを使う
+
 // ===== APIレスポンスを統一フォーマットに変換する =====
 function normalizeResponse(raw) {
   const root = raw.scores || raw;
@@ -73,7 +80,7 @@ async function animateScoresSequential(container) {
   const nodes = Array.from(container.querySelectorAll(".js-score"));
 
   const normalNodes = nodes.slice(0, 5); // 各軸
-  const overallNode = nodes[5]; // Overall
+  const overallNode = nodes[5];          // Overall
 
   for (const node of normalNodes) {
     await animateScore(node, 1100);
@@ -108,13 +115,13 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   `;
 
   try {
-    // ★★ ここをローカル固定URLから「同一オリジンの /score」に変更 ★★
-    const response = await fetch("/score", {
+    // ← ここがポイント：API_BASE を前につける
+    const response = await fetch(`${API_BASE}/score`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt }),
     });
 
     if (!response.ok) {
@@ -129,7 +136,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     const rawData = await response.json();
     const data = normalizeResponse(rawData);
 
-    // 結果カードを描画（数字は 0 からスタート、data-target に本当の値）
+    // 結果カード
     resultDiv.innerHTML = `
       <h2>スコア結果 / Score Results</h2>
 
@@ -181,13 +188,13 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         </div>
       </div>
 
-      <h3>コメント（日本語 / Japanese Commentary）</h3>
+      <h3>コメント（日本語）</h3>
       <p>${data.commentJa || "（コメントがありません）"}</p>
 
-      <h3>Comment (English Commentary)</h3>
+      <h3>Comment (English)</h3>
       <p>${data.commentEn || "(No English commentary provided.)"}</p>
 
-      <h3>改善プロンプト（日本語 / Improved Prompt in Japanese）</h3>
+      <h3>改善プロンプト（日本語）</h3>
       <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
 
       <h3>Improved Prompt (English)</h3>
@@ -199,7 +206,6 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       </details>
     `;
 
-    // スコアアニメーションを実行
     await animateScoresSequential(resultDiv);
   } catch (err) {
     console.error(err);
@@ -209,4 +215,3 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     `;
   }
 });
-
