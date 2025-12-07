@@ -72,33 +72,30 @@ function animateScore(element, duration = 1200) {
 async function animateScoresSequential(container) {
   const nodes = Array.from(container.querySelectorAll(".js-score"));
 
-  const normalNodes = nodes.slice(0, 5); // 先頭5つ = 各軸
-  const overallNode = nodes[5]; // 6つ目 = Overall
+  const normalNodes = nodes.slice(0, 5); // 各軸
+  const overallNode = nodes[5]; // Overall
 
-  // 各軸を順番に
   for (const node of normalNodes) {
     await animateScore(node, 1100);
   }
 
-  // Overall だけ特別演出
   if (overallNode) {
     overallNode.classList.add("overall-animating");
     await animateScore(overallNode, 1800);
-    // アニメーション時間 0.8s × 3回ぶんのあとにクラスを外す
     setTimeout(() => {
       overallNode.classList.remove("overall-animating");
     }, 800 * 3);
   }
 }
 
-// ===== Startボタンのクリック処理 =====
+// ===== Start ボタンのクリック処理 =====
 document.getElementById("send-btn").addEventListener("click", async () => {
   const prompt = document.getElementById("prompt-input").value;
   const resultDiv = document.getElementById("result");
 
   if (!prompt.trim()) {
     resultDiv.innerHTML =
-      "<p>プロンプトを入力してください。 / Please enter a prompt.</p>";
+      "<p>プロンプトを入力してください。 / Enter your prompt.</p>";
     return;
   }
 
@@ -106,12 +103,13 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   resultDiv.innerHTML = `
     <div class="loader-wrapper">
       <div class="loader"></div>
-      <p>評価中です… 少々お待ちください。 / Scoring in progress…</p>
+      <p>採点中です… 少々お待ちください。 / Scoring in progress…</p>
     </div>
   `;
 
   try {
-    const response = await fetch("http://127.0.0.1:8000/score", {
+    // ★★ ここをローカル固定URLから「同一オリジンの /score」に変更 ★★
+    const response = await fetch("/score", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -211,3 +209,4 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     `;
   }
 });
+
