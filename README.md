@@ -60,7 +60,7 @@ Hugging Face Space で実際に動作を試せます：
 # 📁 Tech Stack（技術構成）
 
 | Layer | Technology |
-|------|------------|
+|-------|------------|
 | Frontend | HTML / CSS / Vanilla JS |
 | UI/Effects | Pixel fonts / Gradient UI / Animation |
 | Backend | FastAPI (Python) |
@@ -75,17 +75,17 @@ Hugging Face Space で実際に動作を試せます：
 
 ```
 prompt_scoring_app/
-├── app.py
+├── app.py                 
+├── Dockerfile             
+├── requirements.txt      
 ├── backend/
-│   ├── main.py
-│   ├── models.py
-│   └── llm_scoring.py
-├── frontend/
-│   ├── index.html
-│   ├── style.css
-│   └── script.js
-├── requirements.txt
-└── README.md
+│   ├── main.py            
+│   ├── models.py          
+│   └── llm_scoring.py     
+└── frontend/
+    ├── index.html       
+    ├── style.css
+    └── app.js
 ```
 
 ---
