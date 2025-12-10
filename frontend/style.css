@@ -205,8 +205,7 @@ body {
   margin: 2px 0 4px;
 }
 
-/* テキストボックス */
-pre {
+.result-card pre {
   white-space: pre-wrap;
   background: rgba(15, 23, 42, 0.9);
   padding: 10px;
@@ -214,6 +213,7 @@ pre {
   border: 1px solid rgba(55, 65, 81, 0.9);
   font-size: 12px;
   color: #e5e7eb;
+  margin-top: 4px;
 }
 
 /* ローディング */
