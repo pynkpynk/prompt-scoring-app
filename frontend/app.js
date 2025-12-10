@@ -58,7 +58,7 @@ function animateScore(element, duration = 1200) {
     function frame(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // イージング
+      const eased = 1 - Math.pow(1 - progress, 3); 
 
       const current = Math.floor(target * eased);
       element.textContent = current;
@@ -142,35 +142,35 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
       <div class="score-grid">
         <div class="score-item">
-          <div class="score-label">Clarity（明瞭さ / Clarity）</div>
+          <div class="score-label">Clarity（明瞭性）</div>
           <div class="score-value ${getScoreClass(
             data.clarity
           )} js-score" data-target="${data.clarity}">0</div>
         </div>
 
         <div class="score-item">
-          <div class="score-label">Specificity（具体性 / Specificity）</div>
+          <div class="score-label">Specificity（具体性）</div>
           <div class="score-value ${getScoreClass(
             data.specificity
           )} js-score" data-target="${data.specificity}">0</div>
         </div>
 
         <div class="score-item">
-          <div class="score-label">Constraints（制約条件 / Constraints）</div>
+          <div class="score-label">Constraints（制約性）</div>
           <div class="score-value ${getScoreClass(
             data.constraints
           )} js-score" data-target="${data.constraints}">0</div>
         </div>
 
         <div class="score-item">
-          <div class="score-label">Intent（意図の明確さ / Intent Clarity）</div>
+          <div class="score-label">Intent（意図性）</div>
           <div class="score-value ${getScoreClass(
             data.intent
           )} js-score" data-target="${data.intent}">0</div>
         </div>
 
         <div class="score-item">
-          <div class="score-label">Safety（安全性 / Safety）</div>
+          <div class="score-label">Safety（安全性）</div>
           <div class="score-value ${getScoreClass(
             data.safety
           )} js-score" data-target="${data.safety}">0</div>
@@ -180,7 +180,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       <div class="overall-wrapper">
         <div class="overall-card">
           <div class="overall-label">
-            Overall（総合評価 / Overall Score）
+            Overall（総合評価）
           </div>
           <div class="overall-value ${getScoreClass(
             data.overall
