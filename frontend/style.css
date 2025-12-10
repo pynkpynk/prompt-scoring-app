@@ -205,8 +205,8 @@ body {
   margin: 2px 0 4px;
 }
 
-/* 改善プロンプト */
-pre {
+/* テキストボックス */
+.pre {
   white-space: pre-wrap;
   background: rgba(15, 23, 42, 0.9);
   padding: 10px;
@@ -271,7 +271,7 @@ pre {
 }
 .overall-card {
   margin-top: 8px;
-  padding: 18px 20px;     /* ちょい増やす */
+  padding: 18px 20px;
   border-radius: 16px;
   background: radial-gradient(circle at top left, #312e81, #020617);
   border: 1px solid rgba(244, 244, 245, 0.55);
@@ -296,13 +296,13 @@ pre {
   min-width: 3ch;             /* 0〜100 の3桁ぶん幅を確保 */
   text-align: right;
   vertical-align: bottom;
-  transform: translateZ(0);   /* ブラウザ側の最適化 */
+  transform: translateZ(0);
   transform-origin: center center;
 }
 
 /* ★ アニメーション中のクラス（overall-valueと併用） */
 .overall-value.overall-animating {
-  animation: overall-pulse 0.8s ease-in-out 3;  /* 3回ポンポンっと */
+  animation: overall-pulse 0.8s ease-in-out 3;
 }
 
 /* ★ 拡大して光るアニメーション */
