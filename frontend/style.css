@@ -206,7 +206,7 @@ body {
 }
 
 /* テキストボックス */
-.pre {
+pre {
   white-space: pre-wrap;
   background: rgba(15, 23, 42, 0.9);
   padding: 10px;
