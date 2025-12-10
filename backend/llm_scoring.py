@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Any, Dict
 
 from openai import OpenAI
 from .models import PromptScore
@@ -8,7 +8,6 @@ from .models import PromptScore
 # === OpenAI クライアントの初期化 ===
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
-    # HF Spaces のログにも出るように、メッセージをはっきりさせる
     raise RuntimeError(
         "OPENAI_API_KEY is not set in environment. "
         "Set it in your Hugging Face Space settings (Secrets) or local .env."
@@ -16,6 +15,7 @@ if not api_key:
 
 client = OpenAI(api_key=api_key)
 
+# デフォルトで使うモデル（通常利用向け）
 MODEL_NAME = "gpt-5-mini"
 
 
@@ -178,13 +178,15 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
     raise ValueError(f"LLM returned non-JSON content: {s}")
 
 
-def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
-    """
-    Call the LLM and return the scoring result as a dict.
-    """
+def call_llm_for_scoring(
+    user_prompt: str,
+    model_name: str | None = None,
+) -> Dict[str, Any]:
+    
+    model = model_name or MODEL_NAME
+
     response = client.chat.completions.create(
-        model=MODEL_NAME,
-        # Force the model to return a JSON object
+        model=model,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -193,13 +195,11 @@ def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
     )
 
     message = response.choices[0].message
-
-    # content is usually a string when using response_format=json_object
     content = message.content
+
     if isinstance(content, str):
         text = content
     elif isinstance(content, list):
-        # Fallback: concatenate text parts if the SDK returns a content list
         parts = []
         for part in content:
             if getattr(part, "type", None) == "text":
@@ -213,20 +213,20 @@ def call_llm_for_scoring(user_prompt: str) -> Dict[str, Any]:
     if not text or text.strip() == "":
         raise ValueError("LLM returned empty content (only whitespace)")
 
-    data = _parse_json_text(text)
-    return data
+    return _parse_json_text(text)
 
 
-def score_prompt_with_llm(user_prompt: str) -> PromptScore:
-    """
-    Call the LLM with user_prompt and map the JSON result into PromptScore.
-    """
-    data = call_llm_for_scoring(user_prompt)
+def score_prompt_with_llm(
+    user_prompt: str,
+    model_name: str | None = None,
+) -> PromptScore:
+    
+    data = call_llm_for_scoring(
+        user_prompt=user_prompt,
+        model_name=model_name,
+    )
 
     def to_int_0_100(value: Any) -> int:
-        """
-        Normalize any numeric value into an int between 0 and 100.
-        """
         try:
             v = float(value)
         except (TypeError, ValueError):
@@ -246,4 +246,3 @@ def score_prompt_with_llm(user_prompt: str) -> PromptScore:
         improved_prompt_ja=str(data.get("improved_prompt_ja", "")),
         improved_prompt_en=str(data.get("improved_prompt_en", "")),
     )
-
