@@ -115,7 +115,6 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   `;
 
   try {
-    // ← ここがポイント：API_BASE を前につける
     const response = await fetch(`${API_BASE}/score`, {
       method: "POST",
       headers: {
@@ -189,10 +188,10 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       </div>
 
       <h3>コメント（日本語）</h3>
-      <p>${data.commentJa || "（コメントがありません）"}</p>
+      <pre>${data.commentJa || "（コメントがありません）"}</pre>
 
       <h3>Comment (English)</h3>
-      <p>${data.commentEn || "(No English commentary provided.)"}</p>
+      <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
 
       <h3>改善プロンプト（日本語）</h3>
       <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
