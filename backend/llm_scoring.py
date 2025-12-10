@@ -93,7 +93,7 @@ You MAY use Markdown formatting inside these strings
 You must provide feedback in both English and Japanese:
 
 - comment_en:
-  A short explanation in English (2–5 sentences or a short Markdown list) that:
+  A short explanation in English (2–5 sentences and a short Markdown list) that:
   - briefly summarizes the main strengths of the original prompt, and
   - focuses on concrete improvement tips (e.g., in bullet points).
 
@@ -104,18 +104,22 @@ You must provide feedback in both English and Japanese:
 Examples of good content style for comments (conceptual, do NOT copy):
 
 - comment_en:
-  "- Strength: clearly states the task and audience.\n- Improvement: specify desired length and tone.\n- Improvement: define output format (e.g., bullet list etc...)."
+  "
+  - Strength: clearly states the task and audience.\n
+  - Improvement: specify desired length and tone. And define output format (e.g., bullet list etc...)."
 
 - comment_ja:
-  "- 良い点: タスクと対象読者が明確です。\n- 改善点: 希望する文量やトーンを指定するとより安定します。\n- 改善点: 出力形式（箇条書きなど）を明示してください。"
+  "
+  - 良い点: タスクと対象読者が明確です。\n
+  - 改善点: 希望する文量やトーンを指定するとより安定します。また、出力形式（箇条書きなど）を明示してください。"
 
 # 6. Safety
 
-"safety" should reflect how safe and responsible the requested behavior is.
+"safety" should reflect how safe and responsible the requested behavior and content is.
 
-- High score if the prompt clearly avoids harmful, illegal, or disallowed content,
+- High score if the prompt clearly avoids harmful, illegal, confidential or disallowed content,
   or handles sensitive topics cautiously.
-- Low score if it pushes for harmful, abusive, illegal, or policy-violating content.
+- Low score if it pushes for harmful, abusive, illegal, or policy-violating content and includes confidential information.
 
 # 7. Output rules (VERY IMPORTANT)
 
