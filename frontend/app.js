@@ -13,9 +13,10 @@ const API_BASE =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:8000" // ローカル開発用（FastAPI を :8000 で起動している前提）
-    : RENDER_API_BASE;      // 本番環境用
+    : RENDER_API_BASE;        // 本番環境用
 
-window.API_BASE = API_BASE;// デバッグ用（Console から見えるようにする）
+// デバッグ用（Console から確認）
+window.API_BASE = API_BASE;
 
 // ===== APIレスポンスを統一フォーマットに変換する =====
 function normalizeResponse(raw) {
@@ -62,7 +63,7 @@ function animateScore(element, duration = 1200) {
     function frame(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); 
+      const eased = 1 - Math.pow(1 - progress, 3);
 
       const current = Math.floor(target * eased);
       element.textContent = current;
@@ -98,56 +99,6 @@ async function animateScoresSequential(container) {
     }, 800 * 3);
   }
 }
-
-// ===== Start ボタンのクリック処理 =====
-document.getElementById("send-btn").addEventListener("click", async () => {
-  const prompt = document.getElementById("prompt-input").value;
-  const resultDiv = document.getElementById("result");
-
-  if (!prompt.trim()) {
-    resultDiv.innerHTML =
-      "<p>プロンプトを入力してください。 / Enter your prompt.</p>";
-    return;
-  }
-
-  // ローディング表示
-  resultDiv.innerHTML = `
-    <div class="loader-wrapper">
-      <div class="loader-progress" aria-label="Scoring in progress">
-        <div class="loader-bar">
-          <div class="loader-bar-fill"></div>
-        </div>
-        <span class="loader-percent js-loader-percent">0%</span>
-      </div>
-      <p class="loader-text">
-        採点中です… 少々お待ちください。/ Scoring in progress… <br />
-        Scoring in progress… usually finishes in about 5–10 seconds.
-      </p>
-    </div>
-  `;
-
-   const stopLoaderProgress = startLoaderProgress();
-
-  try {
-    const response = await fetch(`${API_BASE}/score`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      resultDiv.innerHTML = `
-        <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
-        <pre>${errText}</pre>
-      `;
-      return;
-    }
-
-    const rawData = await response.json();
-    const data = normalizeResponse(rawData);
 
 // ===== ローディング用プログレスバー（疑似進捗） =====
 function startLoaderProgress() {
@@ -190,8 +141,42 @@ function startLoaderProgress() {
   };
 }
 
-// プログレスバーを完了状態に
-    stopLoaderProgress();
+// ===== Start ボタンのクリック処理 =====
+document.getElementById("send-btn").addEventListener("click", async () => {
+  const prompt = document.getElementById("prompt-input").value;
+  const resultDiv = document.getElementById("result");
+
+  if (!prompt.trim()) {
+    resultDiv.innerHTML =
+      "<p>プロンプトを入力してください。 / Enter your prompt.</p>";
+    return;
+  }
+
+  // ローディング表示
+  resultDiv.innerHTML = `
+    <div class="loader-wrapper">
+      <div class="loader-progress" aria-label="Scoring in progress">
+        <div class="loader-bar">
+          <div class="loader-bar-fill"></div>
+        </div>
+        <span class="loader-percent js-loader-percent">0%</span>
+      </div>
+      <p class="loader-text">
+        採点中です… 少々お待ちください。/ Scoring in progress…
+      </p>
+    </div>
+  `;
+
+  const stopLoaderProgress = startLoaderProgress();
+
+  try {
+    const response = await fetch(`${API_BASE}/score`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
 
     if (!response.ok) {
       const errText = await response.text();
@@ -202,6 +187,12 @@ function startLoaderProgress() {
       `;
       return;
     }
+
+    const rawData = await response.json();
+    const data = normalizeResponse(rawData);
+
+    // プログレスバーを完了状態に
+    stopLoaderProgress();
 
     // 結果カード
     resultDiv.innerHTML = `
@@ -276,6 +267,7 @@ function startLoaderProgress() {
     await animateScoresSequential(resultDiv);
   } catch (err) {
     console.error(err);
+    stopLoaderProgress();
     resultDiv.innerHTML = `
       <p>通信エラーが発生しました。 / Network error occurred.</p>
       <pre>${String(err)}</pre>
