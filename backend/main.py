@@ -6,9 +6,15 @@ from .llm_scoring import score_prompt_with_llm
 
 app = FastAPI(title="Prompt Scoring API v1 (LLM powered)")
 
+origins = [
+    "http://localhost:3000",
+    "https://your-vercel-app.vercel.app",
+    "https://pynkpynk-prompt-scoring-app.hf.space",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
