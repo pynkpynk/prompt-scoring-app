@@ -113,10 +113,20 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   // ローディング表示
   resultDiv.innerHTML = `
     <div class="loader-wrapper">
-      <div class="loader"></div>
-      <p>採点中です… 少々お待ちください。 / Scoring in progress…</p>
+      <div class="loader-progress" aria-label="Scoring in progress">
+        <div class="loader-bar">
+          <div class="loader-bar-fill"></div>
+        </div>
+        <span class="loader-percent js-loader-percent">0%</span>
+      </div>
+      <p class="loader-text">
+        採点中です… 少々お待ちください。/ Scoring in progress… <br />
+        Scoring in progress… usually finishes in about 5–10 seconds.
+      </p>
     </div>
   `;
+
+   const stopLoaderProgress = startLoaderProgress();
 
   try {
     const response = await fetch(`${API_BASE}/score`, {
@@ -138,6 +148,60 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
     const rawData = await response.json();
     const data = normalizeResponse(rawData);
+
+// ===== ローディング用プログレスバー（疑似進捗） =====
+function startLoaderProgress() {
+  const bar = document.querySelector(".loader-bar-fill");
+  const label = document.querySelector(".js-loader-percent");
+
+  if (!bar || !label) {
+    // 何もできないとき用のダミー
+    return () => {};
+  }
+
+  let progress = 0;
+  let stopped = false;
+  const start = performance.now();
+  const approxDuration = 7000; // 想定完了時間（ms）: 7秒くらいを目安に
+
+  function tick(now) {
+    if (stopped) return;
+
+    const elapsed = now - start;
+    // 最大90%までゆっくり伸ばしておく（本当の完了タイミングはfetch側で決める）
+    const target = Math.min(90, (elapsed / approxDuration) * 100);
+    progress = Math.max(progress, target);
+
+    bar.style.width = `${progress}%`;
+    label.textContent = `${Math.round(progress)}%`;
+
+    if (progress < 90) {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  requestAnimationFrame(tick);
+
+  // 呼び出し側で「完了時」に呼ぶ
+  return () => {
+    stopped = true;
+    bar.style.width = "100%";
+    label.textContent = "100%";
+  };
+}
+
+// プログレスバーを完了状態に
+    stopLoaderProgress();
+
+    if (!response.ok) {
+      const errText = await response.text();
+      stopLoaderProgress();
+      resultDiv.innerHTML = `
+        <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
+        <pre>${errText}</pre>
+      `;
+      return;
+    }
 
     // 結果カード
     resultDiv.innerHTML = `
