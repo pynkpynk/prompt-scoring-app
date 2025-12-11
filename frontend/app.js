@@ -7,11 +7,13 @@ function getScoreClass(score) {
 }
 
 // ===== API ベースURLを環境ごとに切り替え =====
+const RENDER_API_BASE = "https://prompt-scoring-app.onrender.com";
+
 const API_BASE =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:8000" // ローカル開発用（FastAPI を :8000 で起動している前提）
-    : "";                     // HF Spaces など本番では同一オリジンを使う
+    : "RENDER_API_BASE";      // 本番環境用
 
 // ===== APIレスポンスを統一フォーマットに変換する =====
 function normalizeResponse(raw) {
