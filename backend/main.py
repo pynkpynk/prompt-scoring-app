@@ -8,7 +8,7 @@ app = FastAPI(title="Prompt Scoring API v1 (LLM powered)")
 
 @app.get("/")
 def read_root():
-    return {"status": "ok", "message": "Prompt Scoring backend (Render) running."}
+    return {"status": "ok."}
 
 origins = [
     "http://localhost:3000",
