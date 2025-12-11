@@ -12,7 +12,7 @@ def read_root():
 
 origins = [
     "http://localhost:3000",
-    "https://your-vercel-app.vercel.app",
+    "https://prompt-scoring-app.vercel.app",
     "https://pynkpynk-prompt-scoring-app.hf.space",
 ]
 
