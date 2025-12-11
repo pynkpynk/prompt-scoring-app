@@ -13,7 +13,7 @@ const API_BASE =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:8000" // ローカル開発用（FastAPI を :8000 で起動している前提）
-    : "RENDER_API_BASE";      // 本番環境用
+    : RENDER_API_BASE;      // 本番環境用
 
 window.API_BASE = API_BASE;// デバッグ用（Console から見えるようにする）
 
