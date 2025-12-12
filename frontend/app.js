@@ -52,7 +52,7 @@ function buildMatrixRain(container, opts = {}) {
 
     // CSS変数（あなたのCSSに合わせる）
     const x = Math.random() * 100;
-    const dur = rand(3600, 6200);
+    const dur = rand(5200, 8200);
     const delay = -rand(0, 3000);
     const size = randFloat(11, 18);
     const alpha = randFloat(0.25, 0.95);
