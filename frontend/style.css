@@ -216,55 +216,6 @@ body {
   margin-top: 4px;
 }
 
-/* ===== ローディング：二重リングローダー ===== */
-
-@keyframes psa-rotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.psa-loader {
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-
-.psa-loader-ring {
-  position: absolute;
-  inset: 0;
-}
-
-.psa-loader-ring svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  animation: psa-rotate 1s linear infinite;
-  /* 補色系のアクセント（背景がダーク寄りならシアン～ティール系が見やすい） */
-  fill: rgba(56, 189, 248, 0.35); /* tailwindでいう sky-400 付近 */
-}
-
-.psa-loader-ring--delay svg {
-  animation-delay: -0.5s;
-  /* 2本目は少し色を変えて奥行き感 */
-  fill: rgba(244, 114, 182, 0.4); /* pink系。好みで調整OK */
-}
-
-.loader-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-}
-
-.loader-text {
-  font-size: 0.85rem;
-  color: #9ca3af;
-  text-align: center;
-  line-height: 1.5;
-}
-
 /* ===== Matrix風ローディング ===== */
 
 .matrix-loader {
