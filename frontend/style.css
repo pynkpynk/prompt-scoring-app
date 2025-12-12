@@ -131,12 +131,16 @@ body {
   border: 1px solid rgba(129, 140, 248, 0.5);
   min-height: 40px;
   font-size: 13px;
+
+  /* Matrix overlay を重ねるため */
+  position: relative;
+  overflow: hidden;
 }
 
 /* スコアのグリッド（5項目を横1列） */
 .score-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)); /* PCでは5列固定 */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 18px;
 }
@@ -145,17 +149,17 @@ body {
 .score-item {
   background: rgba(15, 23, 42, 0.9);
   border-radius: 14px;
-  padding: 14px 16px 12px;          /* 上の余白多め */
+  padding: 14px 16px 12px;
   border: 1px solid rgba(148, 163, 184, 0.7);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;   /* ラベルは上、数字は下に揃える */
-  min-height: 120px;                /* 高さUPで揃えやすく */
+  justify-content: space-between;
+  min-height: 120px;
 }
 
 .score-label {
-  font-size: 10px;                  /* 少し小さく */
-  line-height: 1.4;                 /* 行間を詰める */
+  font-size: 10px;
+  line-height: 1.4;
   color: #9ca3af;
   margin-bottom: 6px;
 }
@@ -164,29 +168,24 @@ body {
 .score-value {
   font-size: 24px;
   font-family: "Press Start 2P", system-ui;
-  line-height: 1;                /* 行の高さ固定 */
-  display: inline-block;         /* 幅固定のため */
-  min-width: 3ch;                /* 最大3桁分の幅を確保（0〜100想定） */
-  text-align: right;             /* 右寄せで揺れを抑える */
-  vertical-align: bottom;        /* ベースラインを揃える */
-  transform: translateZ(0);      /* 再描画を安定させる */
+  line-height: 1;
+  display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  vertical-align: bottom;
+  transform: translateZ(0);
 }
-
 
 /* スコア値の色分け */
 .score-low {
-  color: #f97373;   /* 赤系 0–49 */
+  color: #f97373;
 }
-
 .score-mid {
-  color: #e5e7eb;   /* 白系 50–79 */
+  color: #e5e7eb;
 }
-
 .score-high {
-  color: #4ade80;   /* 緑系 80–100 */
+  color: #4ade80;
 }
-
-
 
 /* セクションタイトル */
 .result-card h2 {
@@ -216,12 +215,7 @@ body {
   margin-top: 4px;
 }
 
-/* ===== Matrix風ローディング ===== */
-/* Matrix Rain Overlay（結果カードいっぱいに重ねる）  */
-.result-card {
-  position: relative;
-  overflow: hidden;
-}
+/* ===== Matrix Loading Overlay (Clean) ===== */
 
 /* overlayが結果カード全面に重なる */
 .matrix-overlay {
@@ -235,9 +229,10 @@ body {
 .matrix-rain-layer {
   position: absolute;
   inset: 0;
+  overflow: hidden;
 }
 
-/* 1列（カラム） */
+/* 1列（JSで生成される） */
 .matrix-col {
   position: absolute;
   top: -140%;
@@ -248,7 +243,7 @@ body {
   font-family: "Press Start 2P", monospace;
   opacity: var(--alpha);
   filter: blur(var(--blur));
-  animation: matrix-fall var(--dur) linear infinite;
+  animation: matrix-col-fall var(--dur) linear infinite;
   animation-delay: var(--delay);
   will-change: transform;
 }
@@ -260,7 +255,7 @@ body {
   text-shadow: 0 0 calc(10px * var(--glow)) rgba(34, 197, 94, 0.75);
 }
 
-/* 先頭（ヘッド）だけ明るい＝奥行き・立体感 */
+/* 先頭（ヘッド）だけ明るい */
 .matrix-ch.is-head {
   color: rgba(187, 247, 208, 0.98);
   text-shadow:
@@ -284,86 +279,20 @@ body {
 
 /* フェードアウト */
 .matrix-overlay.fade-out {
-  animation: overlay-fade 0.35s ease-out forwards;
+  animation: matrix-overlay-fade 0.35s ease-out forwards;
 }
 
-@keyframes overlay-fade {
+@keyframes matrix-overlay-fade {
   to { opacity: 0; }
 }
 
-@keyframes matrix-fall {
+/* keyframes名をユニークにして衝突ゼロ */
+@keyframes matrix-col-fall {
   0%   { transform: translate(-50%, 0); }
   100% { transform: translate(-50%, 260%); }
 }
 
-
-/* 中央テキスト */
-.matrix-label {
-  position: absolute;
-  bottom: 18px;
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: #86efac;
-  text-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
-}
-
-/* ===== Matrix Rain ===== */
-
-.matrix-rain {
-  position: absolute;
-  top: -120%;
-  width: 1.2ch;
-  font-family: "Press Start 2P", monospace;
-  font-size: 14px;
-  line-height: 1.4;
-  color: #22c55e;
-  text-shadow: 0 0 6px rgba(34, 197, 94, 0.9);
-  animation: matrix-rain-fall 3.2s linear infinite;
-  opacity: 0.9;
-}
-
-/* 文字を縦に並べる */
-.matrix-rain span {
-  display: block;
-}
-
-/* 横位置 & ディレイ */
-.matrix-rain:nth-child(1) { left: 10%; }
-.matrix-rain:nth-child(2) { left: 35%; animation-duration: 3.8s; }
-.matrix-rain:nth-child(3) { left: 60%; animation-duration: 2.9s; }
-.matrix-rain:nth-child(4) { left: 82%; animation-duration: 4.1s; }
-
-.delay-1 { animation-delay: -1.2s; }
-.delay-2 { animation-delay: -2.1s; }
-
-@keyframes matrix-rain-fall {
-  0%   { transform: translateY(0); opacity: 0; }
-  10%  { opacity: 1; }
-  100% { transform: translateY(220%); opacity: 0; }
-}
-
-/* 各列の位置とスピードを少しずつずらす */
-.matrix-stream:nth-child(1)  { left: 5%;  animation-duration: 1.7s; animation-delay: -0.3s; }
-.matrix-stream:nth-child(2)  { left: 14%; animation-duration: 2.1s; animation-delay: -0.9s; }
-.matrix-stream:nth-child(3)  { left: 23%; animation-duration: 1.6s; animation-delay: -0.4s; }
-.matrix-stream:nth-child(4)  { left: 32%; animation-duration: 2.4s; animation-delay: -1.2s; }
-.matrix-stream:nth-child(5)  { left: 41%; animation-duration: 2.0s; animation-delay: -0.7s; }
-.matrix-stream:nth-child(6)  { left: 50%; animation-duration: 1.9s; animation-delay: -1.5s; }
-.matrix-stream:nth-child(7)  { left: 59%; animation-duration: 2.3s; animation-delay: -0.2s; }
-.matrix-stream:nth-child(8)  { left: 68%; animation-duration: 1.8s; animation-delay: -1.0s; }
-.matrix-stream:nth-child(9)  { left: 77%; animation-duration: 2.2s; animation-delay: -0.6s; }
-.matrix-stream:nth-child(10) { left: 86%; animation-duration: 1.5s; animation-delay: -1.3s; }
-
-@keyframes matrix-fall {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(100%);
-  }
-}
-
-/* ローダー周りの共通レイアウト */
+/* ローダー周りの共通レイアウト（他で使う場合にも安全） */
 .loader-wrapper {
   display: flex;
   flex-direction: column;
@@ -377,16 +306,6 @@ body {
   color: #9ca3af;
   text-align: center;
   line-height: 1.5;
-}
-
-.matrix-overlay.fade-out {
-  animation: overlay-fade 0.4s ease-out forwards;
-}
-
-@keyframes overlay-fade {
-  to {
-    opacity: 0;
-  }
 }
 
 /* スマホ対応 */
@@ -441,7 +360,7 @@ body {
   font-family: "Press Start 2P", system-ui;
   line-height: 1;
   display: inline-block;
-  min-width: 3ch;             /* 0〜100 の3桁ぶん幅を確保 */
+  min-width: 3ch;
   text-align: right;
   vertical-align: bottom;
   transform: translateZ(0);
