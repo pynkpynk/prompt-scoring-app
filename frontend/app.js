@@ -207,16 +207,7 @@ function buildMatrixRain(container, opts = {}) {
     for (let j = 0; j < density; j++) {
       const span = document.createElement("span");
       span.className = "matrix-ch";
-
-      // 先頭付近は明るくして“ヘッド”感
-      if (j < 2) span.classList.add("is-head");
-
-      span.textContent = ch;
-      frag.appendChild(span);
-    }
-
-    col.appendChild(frag);
-    container.appendChild(col);
+    }    
   }
 }
 
@@ -228,7 +219,7 @@ function randFloat(min, max) {
 }
 
 // overlay をフェードアウトして削除
-const overlay = document.querySelector(".matrix-overlay");
+const overlay = resultDiv.querySelector(".matrix-overlay");
 if (overlay) {
   overlay.classList.add("fade-out");
   setTimeout(() => overlay.remove(), 400);
