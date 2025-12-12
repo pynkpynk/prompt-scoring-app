@@ -110,8 +110,49 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       "<p>プロンプトを入力してください。 / Enter your prompt.</p>";
     return;
   }
+  
+// ===== ローディング表示（Matrix Rain overlay） =====
+resultDiv.innerHTML = createMatrixOverlayHTML();
 
-// ===== Matrix Rain ローダー（JS生成） =====
+// 雨を生成
+const rainRoot = resultDiv.querySelector(".js-matrix-rain");
+buildMatrixRain(rainRoot, {
+  columns: 34,
+  density: 28,
+  jpWeight: 0.5,
+});
+
+  // ★★★ startedAt を定義 ★★★
+  const startedAt = performance.now();
+  const minShowMs = 300;
+
+  try {
+    const response = await fetch(`${API_BASE}/score`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+
+    const elapsed = performance.now() - startedAt;
+if (elapsed < minShowMs) {
+  await new Promise((r) => setTimeout(r, minShowMs - elapsed));
+}
+
+    if (!response.ok) {
+      const errText = await response.text();
+      resultDiv.innerHTML = `
+        <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
+        <pre>${errText}</pre>
+      `;
+      return;
+    }
+
+    const rawData = await response.json();
+    const data = normalizeResponse(rawData);
+
+    // ===== Matrix Rain ローダー（JS生成） =====
 
 function createMatrixOverlayHTML() {
   return `
@@ -167,20 +208,6 @@ function buildMatrixRain(container, opts = {}) {
       const span = document.createElement("span");
       span.className = "matrix-ch";
 
-      // たまに記号を混ぜる（雰囲気）
-      const useExtra = Math.random() < 0.18;
-      let ch = "";
-
-      if (useExtra) {
-        ch = extra[Math.floor(Math.random() * extra.length)];
-      } else {
-        const phrase =
-          Math.random() < jpWeight ? phrases[0] : phrases[1];
-
-        // phraseから1文字ランダムに取る
-        ch = phrase[Math.floor(Math.random() * phrase.length)];
-      }
-
       // 先頭付近は明るくして“ヘッド”感
       if (j < 2) span.classList.add("is-head");
 
@@ -199,43 +226,6 @@ function rand(min, max) {
 function randFloat(min, max) {
   return Math.random() * (max - min) + min;
 }
-
-// ===== ローディング表示（Matrix Rain overlay） =====
-resultDiv.innerHTML = createMatrixOverlayHTML();
-
-// 雨を生成
-const rainRoot = resultDiv.querySelector(".js-matrix-rain");
-buildMatrixRain(rainRoot, {
-  columns: 34,
-  density: 28,
-  jpWeight: 0.5,
-});
-
-  try {
-    const response = await fetch(`${API_BASE}/score`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
-    });
-
-    const elapsed = performance.now() - startedAt;
-if (elapsed < minShowMs) {
-  await new Promise((r) => setTimeout(r, minShowMs - elapsed));
-}
-
-    if (!response.ok) {
-      const errText = await response.text();
-      resultDiv.innerHTML = `
-        <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
-        <pre>${errText}</pre>
-      `;
-      return;
-    }
-
-    const rawData = await response.json();
-    const data = normalizeResponse(rawData);
 
 // overlay をフェードアウトして削除
 const overlay = document.querySelector(".matrix-overlay");
