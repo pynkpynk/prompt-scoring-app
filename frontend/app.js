@@ -184,7 +184,6 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
     if (!response.ok) {
       const errText = await response.text();
-      stopLoaderProgress();
       resultDiv.innerHTML = `
         <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
         <pre>${errText}</pre>
@@ -195,8 +194,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     const rawData = await response.json();
     const data = normalizeResponse(rawData);
 
-    // プログレスバーを完了状態に
-    stopLoaderProgress();
+  
 
     // 結果カード
     resultDiv.innerHTML = `
