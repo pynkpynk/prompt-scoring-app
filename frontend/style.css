@@ -257,7 +257,7 @@ body {
 
 /* 文字グリッチ時 */
 .matrix-ch.is-glitch {
-  color: rgba(250, 204, 21, 0.95);
+  color: rgba(198, 252, 252, 0.95);
   text-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
 }
 
