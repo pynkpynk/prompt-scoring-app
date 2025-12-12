@@ -111,22 +111,105 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     return;
   }
 
-  // ===== Matrix風ローディング表示 =====
-  resultDiv.innerHTML = `
-   <div class="result-card">
-  <div class="matrix-overlay">
-    <div class="matrix-rain">
-      <span>採</span><span>点</span><span>中</span>
-      <span>S</span><span>C</span><span>O</span><span>R</span><span>I</span><span>N</span><span>G</span>
-      <span>I</span><span>N</span>
-      <span>P</span><span>R</span><span>O</span><span>G</span><span>R</span><span>E</span><span>S</span><span>S</span>
+// ===== Matrix Rain ローダー（JS生成） =====
+
+function createMatrixOverlayHTML() {
+  return `
+    <div class="matrix-overlay" aria-label="Scoring in progress">
+      <div class="matrix-rain-layer js-matrix-rain"></div>
+      <p class="matrix-label">Scoring in progress… / 採点中…</p>
     </div>
-    <div class="matrix-rain delay-1">採点中 SCORING IN PROGRESS</div>
-    <div class="matrix-rain delay-2">採 点 中</div>
-    <p class="matrix-label">Scoring in progress…</p>
-  </div>
-</div>
   `;
+}
+
+function buildMatrixRain(container, opts = {}) {
+  const {
+    columns = 34,          // 列の本数（PCは30〜45くらいが気持ちいい）
+    density = 26,          // 1列あたりの文字数（多いほど密）
+    jpWeight = 0.45,       // "採点中"寄りにする割合
+  } = opts;
+
+  const phrases = ["採点中", "SCORING IN PROGRESS"];
+  const extra = "01|:_-+*/<>[]{}()$#@"; // 少し混ぜるとMatrixっぽさ増す
+
+  // containerの中身を一旦クリア（再生成に対応）
+  container.innerHTML = "";
+
+  // 画面幅に応じて列数を自動調整したい場合はここで補正してもOK
+  const colCount = columns;
+
+  for (let i = 0; i < colCount; i++) {
+    const col = document.createElement("div");
+    col.className = "matrix-col";
+
+    // ===== 列ごとのランダム変数 =====
+    const x = Math.random() * 100;                 // 横位置 %
+    const dur = rand(2400, 6200);                  // 落下速度（ms）
+    const delay = -rand(0, 3000);                  // 負のdelayで既に降ってる感
+    const size = randFloat(11, 18);                // フォントサイズ
+    const alpha = randFloat(0.25, 0.95);           // 透明度（奥行き）
+    const glow = randFloat(0.2, 1.0);              // 光量（奥行き）
+    const blur = randFloat(0, 1.6);                // ぼかし（遠景）
+
+    col.style.setProperty("--x", `${x}%`);
+    col.style.setProperty("--dur", `${dur}ms`);
+    col.style.setProperty("--delay", `${delay}ms`);
+    col.style.setProperty("--size", `${size}px`);
+    col.style.setProperty("--alpha", alpha.toFixed(3));
+    col.style.setProperty("--glow", glow.toFixed(3));
+    col.style.setProperty("--blur", `${blur}px`);
+
+    // ===== 文字を縦に積む（採点中と英語を増やす） =====
+    // 1列に複数フレーズが繰り返し混ざるようにする
+    const frag = document.createDocumentFragment();
+
+    for (let j = 0; j < density; j++) {
+      const span = document.createElement("span");
+      span.className = "matrix-ch";
+
+      // たまに記号を混ぜる（雰囲気）
+      const useExtra = Math.random() < 0.18;
+      let ch = "";
+
+      if (useExtra) {
+        ch = extra[Math.floor(Math.random() * extra.length)];
+      } else {
+        const phrase =
+          Math.random() < jpWeight ? phrases[0] : phrases[1];
+
+        // phraseから1文字ランダムに取る
+        ch = phrase[Math.floor(Math.random() * phrase.length)];
+      }
+
+      // 先頭付近は明るくして“ヘッド”感
+      if (j < 2) span.classList.add("is-head");
+
+      span.textContent = ch;
+      frag.appendChild(span);
+    }
+
+    col.appendChild(frag);
+    container.appendChild(col);
+  }
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+// ===== ローディング表示（Matrix Rain overlay） =====
+resultDiv.innerHTML = createMatrixOverlayHTML();
+
+// 雨を生成
+const rainRoot = resultDiv.querySelector(".js-matrix-rain");
+buildMatrixRain(rainRoot, {
+  columns: 34,
+  density: 28,
+  jpWeight: 0.5,
+});
 
   try {
     const response = await fetch(`${API_BASE}/score`, {
@@ -136,6 +219,11 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       },
       body: JSON.stringify({ prompt }),
     });
+
+    const elapsed = performance.now() - startedAt;
+if (elapsed < minShowMs) {
+  await new Promise((r) => setTimeout(r, minShowMs - elapsed));
+}
 
     if (!response.ok) {
       const errText = await response.text();

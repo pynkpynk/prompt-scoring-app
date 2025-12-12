@@ -217,22 +217,85 @@ body {
 }
 
 /* ===== Matrix風ローディング ===== */
-/* ===== 結果カードに重ねる Matrix Overlay ===== */
-
+/* Matrix Rain Overlay（結果カードいっぱいに重ねる）  */
 .result-card {
   position: relative;
   overflow: hidden;
 }
 
+/* overlayが結果カード全面に重なる */
 .matrix-overlay {
   position: absolute;
   inset: 0;
-  z-index: 20;
-  background: rgba(2, 6, 23, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  z-index: 50;
+  background: rgba(2, 6, 23, 0.88);
 }
+
+/* 雨のレイヤー */
+.matrix-rain-layer {
+  position: absolute;
+  inset: 0;
+}
+
+/* 1列（カラム） */
+.matrix-col {
+  position: absolute;
+  top: -140%;
+  left: var(--x);
+  transform: translateX(-50%);
+  font-size: var(--size);
+  line-height: 1.15;
+  font-family: "Press Start 2P", monospace;
+  opacity: var(--alpha);
+  filter: blur(var(--blur));
+  animation: matrix-fall var(--dur) linear infinite;
+  animation-delay: var(--delay);
+  will-change: transform;
+}
+
+/* 文字 */
+.matrix-ch {
+  display: block;
+  color: rgba(34, 197, 94, 0.65);
+  text-shadow: 0 0 calc(10px * var(--glow)) rgba(34, 197, 94, 0.75);
+}
+
+/* 先頭（ヘッド）だけ明るい＝奥行き・立体感 */
+.matrix-ch.is-head {
+  color: rgba(187, 247, 208, 0.98);
+  text-shadow:
+    0 0 calc(14px * var(--glow)) rgba(74, 222, 128, 0.95),
+    0 0 calc(26px * var(--glow)) rgba(34, 197, 94, 0.65);
+}
+
+/* 中央のラベル */
+.matrix-label {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(187, 247, 208, 0.95);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.9);
+  z-index: 60;
+  pointer-events: none;
+}
+
+/* フェードアウト */
+.matrix-overlay.fade-out {
+  animation: overlay-fade 0.35s ease-out forwards;
+}
+
+@keyframes overlay-fade {
+  to { opacity: 0; }
+}
+
+@keyframes matrix-fall {
+  0%   { transform: translate(-50%, 0); }
+  100% { transform: translate(-50%, 260%); }
+}
+
 
 /* 中央テキスト */
 .matrix-label {
