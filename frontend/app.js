@@ -10,6 +10,73 @@ const API_BASE =
 // デバッグ用（Console から確認）
 window.API_BASE = API_BASE;
 
+// ===== Matrix Rain ローダー HTML =====
+function createMatrixOverlayHTML() {
+  return `
+    <div class="matrix-overlay" aria-label="Scoring in progress">
+      <div class="matrix-rain-layer js-matrix-rain"></div>
+      <p class="matrix-label">Scoring in progress… / 採点中…</p>
+    </div>
+  `;
+}
+
+// ===== Matrix Rain 生成 =====
+function buildMatrixRain(container, opts = {}) {
+  if (!container) return;
+
+  const {
+    columns = 34,
+    density = 28,
+    jpWeight = 0.5,
+  } = opts;
+
+  const jpChars = ["採", "点", "中"];
+  const enChars = "SCORING IN PROGRESS".split("");
+  const extra = "01|:_-+*/<>[]{}$#@".split("");
+
+  container.innerHTML = "";
+
+  for (let i = 0; i < columns; i++) {
+    const col = document.createElement("div");
+    col.className = "matrix-col";
+
+    // 奥行きランダム
+    col.style.left = `${Math.random() * 100}%`;
+    col.style.animationDuration = `${rand(2400, 6200)}ms`;
+    col.style.animationDelay = `${-rand(0, 3000)}ms`;
+    col.style.fontSize = `${randFloat(11, 18)}px`;
+    col.style.opacity = randFloat(0.3, 0.95);
+    col.style.filter = `blur(${randFloat(0, 1.6)}px)`;
+
+    for (let j = 0; j < density; j++) {
+      const span = document.createElement("span");
+      span.className = "matrix-ch";
+      if (j === 0) span.classList.add("is-head");
+
+      const r = Math.random();
+      if (r < jpWeight) {
+        span.textContent = jpChars[Math.floor(Math.random() * jpChars.length)];
+      } else if (r < 0.85) {
+        span.textContent = enChars[Math.floor(Math.random() * enChars.length)];
+      } else {
+        span.textContent = extra[Math.floor(Math.random() * extra.length)];
+      }
+
+      col.appendChild(span);
+    }
+
+    container.appendChild(col);
+  }
+}
+
+function rand(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+function randFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+
 // ===== APIレスポンスを統一フォーマットに変換する =====
 function normalizeResponse(raw) {
   const root = raw.scores || raw;
@@ -151,72 +218,6 @@ if (elapsed < minShowMs) {
 
     const rawData = await response.json();
     const data = normalizeResponse(rawData);
-
-    // ===== Matrix Rain ローダー（JS生成） =====
-
-function createMatrixOverlayHTML() {
-  return `
-    <div class="matrix-overlay" aria-label="Scoring in progress">
-      <div class="matrix-rain-layer js-matrix-rain"></div>
-      <p class="matrix-label">Scoring in progress… / 採点中…</p>
-    </div>
-  `;
-}
-
-function buildMatrixRain(container, opts = {}) {
-  const {
-    columns = 34,          // 列の本数（PCは30〜45くらいが気持ちいい）
-    density = 26,          // 1列あたりの文字数（多いほど密）
-    jpWeight = 0.45,       // "採点中"寄りにする割合
-  } = opts;
-
-  const phrases = ["採点中", "SCORING IN PROGRESS"];
-  const extra = "01|:_-+*/<>[]{}()$#@"; // 少し混ぜるとMatrixっぽさ増す
-
-  // containerの中身を一旦クリア（再生成に対応）
-  container.innerHTML = "";
-
-  // 画面幅に応じて列数を自動調整したい場合はここで補正してもOK
-  const colCount = columns;
-
-  for (let i = 0; i < colCount; i++) {
-    const col = document.createElement("div");
-    col.className = "matrix-col";
-
-    // ===== 列ごとのランダム変数 =====
-    const x = Math.random() * 100;                 // 横位置 %
-    const dur = rand(2400, 6200);                  // 落下速度（ms）
-    const delay = -rand(0, 3000);                  // 負のdelayで既に降ってる感
-    const size = randFloat(11, 18);                // フォントサイズ
-    const alpha = randFloat(0.25, 0.95);           // 透明度（奥行き）
-    const glow = randFloat(0.2, 1.0);              // 光量（奥行き）
-    const blur = randFloat(0, 1.6);                // ぼかし（遠景）
-
-    col.style.setProperty("--x", `${x}%`);
-    col.style.setProperty("--dur", `${dur}ms`);
-    col.style.setProperty("--delay", `${delay}ms`);
-    col.style.setProperty("--size", `${size}px`);
-    col.style.setProperty("--alpha", alpha.toFixed(3));
-    col.style.setProperty("--glow", glow.toFixed(3));
-    col.style.setProperty("--blur", `${blur}px`);
-
-    // ===== 文字を縦に積む（採点中と英語を増やす） =====
-    // 1列に複数フレーズが繰り返し混ざるようにする
-    const frag = document.createDocumentFragment();
-
-    for (let j = 0; j < density; j++) {
-      const span = document.createElement("span");
-      span.className = "matrix-ch";
-    }    
-  }
-}
-
-function rand(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-function randFloat(min, max) {
-  return Math.random() * (max - min) + min;
-}
 
 // overlay をフェードアウトして削除
 const overlay = resultDiv.querySelector(".matrix-overlay");
