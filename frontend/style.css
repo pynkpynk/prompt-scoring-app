@@ -217,39 +217,66 @@ body {
 }
 
 /* ===== Matrix風ローディング ===== */
+/* ===== 結果カードに重ねる Matrix Overlay ===== */
 
-.matrix-loader {
+.result-card {
   position: relative;
-  width: 140px;
-  height: 80px;
-  border-radius: 12px;
   overflow: hidden;
-  background:
-    radial-gradient(circle at top, rgba(74, 222, 128, 0.25), transparent 60%),
-    radial-gradient(circle at bottom, rgba(56, 189, 248, 0.25), transparent 60%),
-    #020617; /* かなり暗めのネイビー系 */
-  box-shadow:
-    0 0 18px rgba(74, 222, 128, 0.35),
-    0 0 30px rgba(15, 23, 42, 0.9) inset;
 }
 
-.matrix-stream {
+.matrix-overlay {
   position: absolute;
-  top: -130%;
-  width: 3px;
-  height: 260%;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(190, 242, 100, 0.0) 5%,
-    rgba(190, 242, 100, 0.25) 25%,
-    rgba(74, 222, 128, 0.9) 55%,
-    rgba(22, 163, 74, 0.7) 75%,
-    transparent 100%
-  );
-  filter: drop-shadow(0 0 4px rgba(74, 222, 128, 0.9));
-  animation: matrix-fall 1.8s linear infinite;
+  inset: 0;
+  z-index: 20;
+  background: rgba(2, 6, 23, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 中央テキスト */
+.matrix-label {
+  position: absolute;
+  bottom: 18px;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #86efac;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+}
+
+/* ===== Matrix Rain ===== */
+
+.matrix-rain {
+  position: absolute;
+  top: -120%;
+  width: 1.2ch;
+  font-family: "Press Start 2P", monospace;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #22c55e;
+  text-shadow: 0 0 6px rgba(34, 197, 94, 0.9);
+  animation: matrix-rain-fall 3.2s linear infinite;
   opacity: 0.9;
+}
+
+/* 文字を縦に並べる */
+.matrix-rain span {
+  display: block;
+}
+
+/* 横位置 & ディレイ */
+.matrix-rain:nth-child(1) { left: 10%; }
+.matrix-rain:nth-child(2) { left: 35%; animation-duration: 3.8s; }
+.matrix-rain:nth-child(3) { left: 60%; animation-duration: 2.9s; }
+.matrix-rain:nth-child(4) { left: 82%; animation-duration: 4.1s; }
+
+.delay-1 { animation-delay: -1.2s; }
+.delay-2 { animation-delay: -2.1s; }
+
+@keyframes matrix-rain-fall {
+  0%   { transform: translateY(0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(220%); opacity: 0; }
 }
 
 /* 各列の位置とスピードを少しずつずらす */
@@ -289,6 +316,15 @@ body {
   line-height: 1.5;
 }
 
+.matrix-overlay.fade-out {
+  animation: overlay-fade 0.4s ease-out forwards;
+}
+
+@keyframes overlay-fade {
+  to {
+    opacity: 0;
+  }
+}
 
 /* スマホ対応 */
 @media (max-width: 640px) {

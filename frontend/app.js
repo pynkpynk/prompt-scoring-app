@@ -113,23 +113,19 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
   // ===== Matrix風ローディング表示 =====
   resultDiv.innerHTML = `
-    <div class="loader-wrapper">
-      <div class="matrix-loader" aria-label="Scoring in progress">
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-        <div class="matrix-stream"></div>
-      </div>
-      <p class="loader-text">
-        Scoring in the Matrix… / 採点中…
-      </p>
+   <div class="result-card">
+  <div class="matrix-overlay">
+    <div class="matrix-rain">
+      <span>採</span><span>点</span><span>中</span>
+      <span>S</span><span>C</span><span>O</span><span>R</span><span>I</span><span>N</span><span>G</span>
+      <span>I</span><span>N</span>
+      <span>P</span><span>R</span><span>O</span><span>G</span><span>R</span><span>E</span><span>S</span><span>S</span>
     </div>
+    <div class="matrix-rain delay-1">採点中 SCORING IN PROGRESS</div>
+    <div class="matrix-rain delay-2">採 点 中</div>
+    <p class="matrix-label">Scoring in progress…</p>
+  </div>
+</div>
   `;
 
   try {
@@ -152,6 +148,13 @@ document.getElementById("send-btn").addEventListener("click", async () => {
 
     const rawData = await response.json();
     const data = normalizeResponse(rawData);
+
+// overlay をフェードアウトして削除
+const overlay = document.querySelector(".matrix-overlay");
+if (overlay) {
+  overlay.classList.add("fade-out");
+  setTimeout(() => overlay.remove(), 400);
+}
 
     // ===== 結果カード =====
     resultDiv.innerHTML = `
