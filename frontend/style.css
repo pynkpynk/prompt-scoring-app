@@ -216,48 +216,46 @@ body {
   margin-top: 4px;
 }
 
-/* ===== ローディング・プログレスバー ===== */
+/* ===== ローディング：二重リングローダー ===== */
+
+@keyframes psa-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.psa-loader {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.psa-loader-ring {
+  position: absolute;
+  inset: 0;
+}
+
+.psa-loader-ring svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  animation: psa-rotate 1s linear infinite;
+  /* 補色系のアクセント（背景がダーク寄りならシアン～ティール系が見やすい） */
+  fill: rgba(56, 189, 248, 0.35); /* tailwindでいう sky-400 付近 */
+}
+
+.psa-loader-ring--delay svg {
+  animation-delay: -0.5s;
+  /* 2本目は少し色を変えて奥行き感 */
+  fill: rgba(244, 114, 182, 0.4); /* pink系。好みで調整OK */
+}
 
 .loader-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
   padding: 16px;
-}
-
-.loader-progress {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 420px;
-}
-
-.loader-bar {
-  flex: 1;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.loader-bar-fill {
-  width: 0%;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #4ade80, #22c55e, #a3e635);
-  transition: width 0.2s ease-out;
-}
-
-.loader-percent {
-  font-family: "DotGothic16", system-ui, sans-serif;
-  font-size: 0.9rem;
-  color: #e5e7eb;
-  min-width: 3ch;
-  text-align: right;
 }
 
 .loader-text {
@@ -266,7 +264,6 @@ body {
   text-align: center;
   line-height: 1.5;
 }
-
 
 /* スマホ対応 */
 @media (max-width: 640px) {
