@@ -273,7 +273,7 @@ body {
   }
 }
 
-/* ローダー周りの共通レイアウト（なければ追加） */
+/* ローダー周りの共通レイアウト */
 .loader-wrapper {
   display: flex;
   flex-direction: column;
@@ -368,4 +368,16 @@ body {
     transform: translateZ(0) scale(1);
     text-shadow: none;
   }
+}
+
+.matrix-loader {
+  outline: 2px solid hotpink !important;
+  background: #111827 !important;
+  min-width: 140px !important;
+  min-height: 80px !important;
+  z-index: 9999 !important;
+}
+.matrix-stream {
+  background: #22c55e !important;
+  opacity: 1 !important;
 }
