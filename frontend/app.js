@@ -33,7 +33,7 @@ function buildMatrixRain(container, opts = {}) {
   if (!container) return;
 
   const {
-    columns = 34,
+    columns = 42,
     density = 28,
     jpWeight = 0.5,
   } = opts;
@@ -53,7 +53,7 @@ function buildMatrixRain(container, opts = {}) {
     // CSS変数（あなたのCSSに合わせる）
     const x = Math.random() * 100;
     const dur = rand(5200, 8200);
-    const delay = -rand(0, 3000);
+    const delay = -rand(0, 1200);
     const size = randFloat(11, 18);
     const alpha = randFloat(0.25, 0.95);
     const glow = randFloat(0.25, 1.25);
