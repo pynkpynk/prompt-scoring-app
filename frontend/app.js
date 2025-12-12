@@ -100,47 +100,6 @@ async function animateScoresSequential(container) {
   }
 }
 
-// ===== ローディング用プログレスバー（疑似進捗） =====
-function startLoaderProgress() {
-  const bar = document.querySelector(".loader-bar-fill");
-  const label = document.querySelector(".js-loader-percent");
-
-  if (!bar || !label) {
-    // 何もできないとき用のダミー
-    return () => {};
-  }
-
-  let progress = 0;
-  let stopped = false;
-  const start = performance.now();
-  const approxDuration = 7000; // 想定完了時間（ms）: 7秒くらいを目安に
-
-  function tick(now) {
-    if (stopped) return;
-
-    const elapsed = now - start;
-    // 最大90%までゆっくり伸ばしておく（本当の完了タイミングはfetch側で決める）
-    const target = Math.min(90, (elapsed / approxDuration) * 100);
-    progress = Math.max(progress, target);
-
-    bar.style.width = `${progress}%`;
-    label.textContent = `${Math.round(progress)}%`;
-
-    if (progress < 90) {
-      requestAnimationFrame(tick);
-    }
-  }
-
-  requestAnimationFrame(tick);
-
-  // 呼び出し側で「完了時」に呼ぶ
-  return () => {
-    stopped = true;
-    bar.style.width = "100%";
-    label.textContent = "100%";
-  };
-}
-
 // ===== Start ボタンのクリック処理 =====
 document.getElementById("send-btn").addEventListener("click", async () => {
   const prompt = document.getElementById("prompt-input").value;
