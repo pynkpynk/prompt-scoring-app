@@ -33,7 +33,7 @@ function buildMatrixRain(container, opts = {}) {
   if (!container) return;
 
   const {
-    columns = 34,
+    columns = 46,
     density = 28,
     jpWeight = 0.5,
   } = opts;
@@ -52,8 +52,8 @@ function buildMatrixRain(container, opts = {}) {
 
     // CSS変数（あなたのCSSに合わせる）
     const x = Math.random() * 100;
-    const dur = rand(2400, 6200);
-    const delay = -rand(0, 3000);
+    const dur = rand(4400, 8200);
+    const delay = -rand(0, 6000);
     const size = randFloat(11, 18);
     const alpha = randFloat(0.25, 0.95);
     const glow = randFloat(0.25, 1.25);
@@ -95,7 +95,7 @@ function startMatrixGlitch(container, opts = {}) {
   if (!container) return () => {};
 
   const {
-    tickMs = 110,        // グリッチ発生の刻み
+    tickMs = 160,        // グリッチ発生の刻み
     perTick = 8,         // 1回でグリッチさせる文字数（増やすと賑やか）
     glitchMinMs = 55,    // グリッチ持続（最短）
     glitchMaxMs = 140,   // グリッチ持続（最長）
