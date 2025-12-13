@@ -14,5 +14,7 @@ class PromptScore(BaseModel):
     overall: int
     comment_en: str
     comment_ja: str
+    comment_fr: str
     improved_prompt_ja: str
     improved_prompt_en: str
+    improved_prompt_fr: str

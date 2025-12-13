@@ -178,7 +178,7 @@ function applyLanguageToStaticUI(lang) {
   if (btn) {
     if (!btn.dataset.i18nText) btn.dataset.i18nText = btn.textContent;
     if (lang === "ja") btn.textContent = "Start!";
-    else if (lang === "fr") btn.textContent = "Start!";
+    else if (lang === "fr") btn.textContent = "Démarrer!";
     else btn.textContent = btn.dataset.i18nText;
   }
 }
@@ -202,6 +202,20 @@ function applyLanguageToPage(lang) {
 }
 
 function initLangToggle() {
+  // (ADDED) ensure FR button exists (HTMLに無くても追加する)
+  const toggleWrap = document.querySelector(".lang-toggle");
+  if (toggleWrap) {
+    const existingFr = toggleWrap.querySelector('.lang-btn[data-lang="fr"]');
+    if (!existingFr) {
+      const frBtn = document.createElement("button");
+      frBtn.type = "button";
+      frBtn.className = "lang-btn";
+      frBtn.dataset.lang = "fr";
+      frBtn.textContent = "FR";
+      toggleWrap.appendChild(frBtn);
+    }
+  }
+
   const buttons = Array.from(document.querySelectorAll(".lang-btn"));
 
   if (!buttons.length) {
@@ -267,7 +281,16 @@ function renderLangBlocks(data) {
     `;
   }
 
-  // EN / FR は commentEn を使う（バックエンド側でFRならcomment_enにFRを入れる）
+  if (SELECTED_LANG === "fr") {
+    return `
+      <h3>Comment (English)</h3>
+      <pre>${data.commentFr || "(No French commentary provided.)"}</pre>
+
+      <h3>Improved Prompt (English)</h3>
+      <pre>${data.improvedFr || "(No improved French prompt provided.)"}</pre>
+    `;
+  }
+
   return `
       <h3>Comment (English)</h3>
       <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
@@ -446,8 +469,10 @@ function normalizeResponse(raw) {
 
   const commentJa = raw.comment_ja ?? raw.comment ?? "";
   const commentEn = raw.comment_en ?? "";
+  const commentFr = raw.comment_fr ?? "";
   const improvedJa = raw.improved_prompt_ja ?? "";
   const improvedEn = raw.improved_prompt_en ?? "";
+  const improvedFr = raw.improved_prompt_fr ?? "";
 
   return {
     clarity,
@@ -458,8 +483,10 @@ function normalizeResponse(raw) {
     overall,
     commentJa,
     commentEn,
+    commentFr,
     improvedJa,
     improvedEn,
+    improvedFr,
     raw,
   };
 }
