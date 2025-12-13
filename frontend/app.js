@@ -254,6 +254,32 @@ function initLangToggle() {
   });
 }
 
+function renderMetricGuideBlock() {
+  return `
+    <details class="metrics-help" open>
+      <summary>スコアの見方 / How to read the scores / Comment lire les scores</summary>
+
+      <p class="metric-name">Clarity（明瞭性）</p>
+      <p>指示が曖昧でなく、読み手が迷わず実行できるか。 / How unambiguous and easy-to-follow the instructions are. / À quel point les instructions sont claires et faciles à suivre.</p>
+
+      <p class="metric-name">Specificity（具体性）</p>
+      <p>良い回答に必要な前提・条件・具体情報が足りているか。 / How much concrete detail is provided to guide a high-quality answer. / Si le prompt contient assez de détails concrets pour guider une réponse de qualité.</p>
+
+      <p class="metric-name">Constraints（制約性）</p>
+      <p>出力形式、禁止事項、長さ、トーン、引用など「守るべきルール」が明確か。 / How explicit the requirements and bounds are (format, must/avoid rules, length, tone, citations). / Si les contraintes sont explicites (format, règles must/avoid, longueur, ton, sources).</p>
+
+      <p class="metric-name">Intent（意図性）</p>
+      <p>何を達成したいのか／完成形は何か（成功条件）が明確か。 / How clearly the desired outcome and success criteria are defined. / Si l’objectif et les critères de réussite sont clairement définis.</p>
+
+      <p class="metric-name">Safety（安全性）</p>
+      <p>危険・違法・機密・不適切な依頼を避けているか（または慎重に扱っているか）。 / How safe and responsible the requested behavior/content is. / Le niveau de sûreté et de responsabilité de la demande (illégal, dangereux, données sensibles, etc.).</p>
+
+      <p class="metric-name">Overall（総合評価）</p>
+      <p>5軸を平均せず、実運用での「出力の安定性・使いやすさ」を総合的に見たスコア。 / A holistic score (not an average) reflecting practical usefulness and reliability. / Un score global (non-moyenné) reflétant l’utilité pratique et la fiabilité.</p>
+    </details>
+  `;
+}
+
 function renderLangBlocks(data) {
   if (!SELECTED_LANG) {
     return `
@@ -309,8 +335,10 @@ function createMatrixOverlayHTML() {
       <div class="matrix-rain-layer js-matrix-rain"></div>
       <p class="matrix-label">SCORING IN PROGRESS / 採点中</p>
     </div>
+    ${renderMetricGuideBlock()}
   `;
 }
+
 
 // ================================
 //  Matrix Rain (Build)
@@ -675,6 +703,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       </div>
 
       ${renderLangBlocks(data)}
+      ${renderMetricGuideBlock()}
 
       <details style="margin-top:12px;">
         <summary>Debug: raw JSON</summary>

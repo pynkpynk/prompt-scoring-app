@@ -447,3 +447,27 @@ body {
     text-shadow: none;
   }
 }
+
+/* ===== Metrics Help ===== */
+.metrics-help {
+  margin-top: 14px;
+  padding: 12px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(2, 6, 23, 0.35);
+  border-radius: 12px;
+}
+
+.metrics-help summary {
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.metrics-help .metric-name {
+  margin: 10px 0 4px;
+  font-weight: 700;
+}
+
+.metrics-help p {
+  margin: 6px 0;
+  line-height: 1.6;
+}
