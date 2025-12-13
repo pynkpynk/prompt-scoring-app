@@ -38,7 +38,7 @@ body {
 .app-title {
   margin: 0 0 10px;
   font-family: "Press Start 2P", system-ui;
-  font-size: 22px;
+  font-size: 26px;
   letter-spacing: 2px;
   color: #e0e7ff;
   text-shadow: 0 0 6px rgba(96, 165, 250, 0.7);
@@ -49,16 +49,20 @@ body {
 @keyframes title-glow {
   0%, 100% {
     text-shadow:
-      0 0 6px rgba(96, 165, 250, 0.45),
-      0 0 14px rgba(34, 197, 94, 0.10);
+      0 0 12px rgba(96, 165, 250, 0.45),
+      0 0 28px rgba(34, 197, 94, 0.10);
     filter: brightness(1);
   }
   50% {
     text-shadow:
-      0 0 9px rgba(96, 165, 250, 0.75),
-      0 0 22px rgba(34, 197, 94, 0.22);
+      0 0 18px rgba(96, 165, 250, 0.75),
+      0 0 44px rgba(34, 197, 94, 0.22);
     filter: brightness(1.05);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-title { animation: none; }
 }
 
 .app-subtitle {

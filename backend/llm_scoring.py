@@ -205,20 +205,61 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
     raise ValueError(f"LLM returned non-JSON content: {s}")
 
 
+def _lang_override_system_prompt(lang: str | None) -> str | None:
+    """
+    Reduce generation based on lang:
+    - en: generate only comment_en & improved_prompt_en; return JA fields as "".
+    - ja: generate only comment_ja & improved_prompt_ja; return EN fields as "".
+    Keep the JSON schema unchanged.
+    """
+    if lang == "en":
+        return (
+            "IMPORTANT OVERRIDE FOR THIS RUN:\n"
+            'Return the SAME JSON schema, but generate ONLY the English text fields:\n'
+            '- comment_en\n'
+            '- improved_prompt_en\n'
+            'Set these Japanese fields to empty strings exactly:\n'
+            '- comment_ja: ""\n'
+            '- improved_prompt_ja: ""\n'
+            "Keep all numeric scores as usual (0–100 integers).\n"
+            "Be concise and do NOT translate.\n"
+        )
+    if lang == "ja":
+        return (
+            "IMPORTANT OVERRIDE FOR THIS RUN:\n"
+            'Return the SAME JSON schema, but generate ONLY the Japanese text fields:\n'
+            '- comment_ja\n'
+            '- improved_prompt_ja\n'
+            'Set these English fields to empty strings exactly:\n'
+            '- comment_en: ""\n'
+            '- improved_prompt_en: ""\n'
+            "Keep all numeric scores as usual (0–100 integers).\n"
+            "Be concise and do NOT translate.\n"
+        )
+    return None
+
+
 def call_llm_for_scoring(
     user_prompt: str,
     model_name: str | None = None,
+    lang: str | None = None,
 ) -> Dict[str, Any]:
     
     model = model_name or MODEL_NAME
 
+    override = _lang_override_system_prompt(lang)
+
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+    ]
+    if override:
+        messages.append({"role": "system", "content": override})
+    messages.append({"role": "user", "content": user_prompt})
+
     response = client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_prompt},
-        ],
+        messages=messages,
     )
 
     message = response.choices[0].message
@@ -246,11 +287,13 @@ def call_llm_for_scoring(
 def score_prompt_with_llm(
     user_prompt: str,
     model_name: str | None = None,
+    lang: str | None = None,
 ) -> PromptScore:
     
     data = call_llm_for_scoring(
         user_prompt=user_prompt,
         model_name=model_name,
+        lang=lang,
     )
 
     def to_int_0_100(value: Any) -> int:
@@ -261,6 +304,19 @@ def score_prompt_with_llm(
         v = round(v)
         return max(0, min(100, int(v)))
 
+    comment_en = str(data.get("comment_en", ""))
+    comment_ja = str(data.get("comment_ja", ""))
+    improved_prompt_ja = str(data.get("improved_prompt_ja", ""))
+    improved_prompt_en = str(data.get("improved_prompt_en", ""))
+
+    # 強制的に片言語を空にして、速度改善の意図を確実にする（スキーマ互換のため）
+    if lang == "en":
+        comment_ja = ""
+        improved_prompt_ja = ""
+    elif lang == "ja":
+        comment_en = ""
+        improved_prompt_en = ""
+
     return PromptScore(
         clarity=to_int_0_100(data.get("clarity")),
         specificity=to_int_0_100(data.get("specificity")),
@@ -268,8 +324,8 @@ def score_prompt_with_llm(
         intent=to_int_0_100(data.get("intent")),
         safety=to_int_0_100(data.get("safety")),
         overall=to_int_0_100(data.get("overall")),
-        comment_en=str(data.get("comment_en", "")),
-        comment_ja=str(data.get("comment_ja", "")),
-        improved_prompt_ja=str(data.get("improved_prompt_ja", "")),
-        improved_prompt_en=str(data.get("improved_prompt_en", "")),
+        comment_en=comment_en,
+        comment_ja=comment_ja,
+        improved_prompt_ja=improved_prompt_ja,
+        improved_prompt_en=improved_prompt_en,
     )
