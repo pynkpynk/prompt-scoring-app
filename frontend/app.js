@@ -199,16 +199,16 @@ function renderLangBlocks(data) {
   // SELECTED_LANG が未設定（=トグル無し）の場合は従来通り両方出す
   if (!SELECTED_LANG) {
     return `
-      <h3>コメント（日本語）</h3>
+      <h3>コメント</h3>
       <pre>${data.commentJa || "（コメントがありません）"}</pre>
 
-      <h3>Comment (English)</h3>
+      <h3>Comment</h3>
       <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
 
-      <h3>改善プロンプト（日本語）</h3>
+      <h3>改善プロンプト</h3>
       <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
 
-      <h3>Improved Prompt (English)</h3>
+      <h3>Improved Prompt</h3>
       <pre>${data.improvedEn || "(No improved English prompt provided.)"}</pre>
     `;
   }
@@ -216,10 +216,10 @@ function renderLangBlocks(data) {
   // JPのみ
   if (SELECTED_LANG === "ja") {
     return `
-      <h3>コメント（日本語）</h3>
+      <h3>コメント</h3>
       <pre>${data.commentJa || "（コメントがありません）"}</pre>
 
-      <h3>改善プロンプト（日本語）</h3>
+      <h3>改善プロンプト</h3>
       <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
     `;
   }
