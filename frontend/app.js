@@ -107,40 +107,6 @@ function localizeText(text, lang) {
   return text;
 }
 
-function selectSideFromHTML(html, lang) {
-  const s = String(html || "");
-  if (!s.includes(" / ")) return s;
-
-  const parts = s.split(" / ");
-
-  // (ADDED) 3 parts: JP / EN / FR
-  if (parts.length >= 3) {
-    if (lang === "ja") return parts[0];
-    if (lang === "en") return parts[1];
-    if (lang === "fr") return parts.slice(2).join(" / ");
-    return parts[1];
-  }
-
-  // legacy 2 parts
-  const leftHTML = parts[0];
-  const rightHTML = parts.slice(1).join(" / ");
-
-  const tmp = document.createElement("div");
-  tmp.innerHTML = leftHTML;
-  const leftText = tmp.textContent || "";
-
-  tmp.innerHTML = rightHTML;
-  const rightText = tmp.textContent || "";
-
-  const leftJa = hasJaChars(leftText);
-  const rightJa = hasJaChars(rightText);
-
-  if (leftJa && !rightJa) return lang === "ja" ? leftHTML : rightHTML;
-  if (!leftJa && rightJa) return lang === "ja" ? rightHTML : leftHTML;
-
-  return lang === "ja" ? leftHTML : rightHTML;
-}
-
 function applyLanguageToStaticUI(lang) {
   if (!lang) return;
 
@@ -186,19 +152,30 @@ function applyLanguageToStaticUI(lang) {
 function localizeResultCard(root, lang) {
   if (!root || !lang) return;
 
-  const targets = root.querySelectorAll("h2, h3, p, summary, .score-label, .overall-label, .matrix-label");
+  const targets = root.querySelectorAll(
+    "h2, h3, p, summary, .score-label, .overall-label, .matrix-label"
+  );
+
   targets.forEach((el) => {
-    const original = el.textContent || "";
+    // (ADDED) keep original so toggling works repeatedly
+    if (!el.dataset.i18nText) el.dataset.i18nText = el.textContent || "";
+    const original = el.dataset.i18nText || "";
     const localized = localizeText(original, lang);
-    if (localized !== original) el.textContent = localized;
+    if (localized !== el.textContent) el.textContent = localized;
   });
 }
 
 function applyLanguageToPage(lang) {
   if (!lang) return;
+
   applyLanguageToStaticUI(lang);
+
   const resultDiv = document.getElementById("result");
   if (resultDiv) localizeResultCard(resultDiv, lang);
+
+  // (ADDED) metrics guide lives OUTSIDE result card, but should also localize
+  const guideDiv = document.getElementById("metrics-guide");
+  if (guideDiv) localizeResultCard(guideDiv, lang);
 }
 
 function initLangToggle() {
@@ -280,6 +257,30 @@ function renderMetricGuideBlock() {
   `;
 }
 
+// (ADDED) ensure the guide container exists and mounts OUTSIDE result card
+function ensureMetricsGuideContainer() {
+  let guideDiv = document.getElementById("metrics-guide");
+  if (guideDiv) return guideDiv;
+
+  const resultDiv = document.getElementById("result");
+  if (!resultDiv) return null;
+
+  guideDiv = document.createElement("section");
+  guideDiv.id = "metrics-guide";
+  guideDiv.className = "metrics-guide";
+  resultDiv.insertAdjacentElement("afterend", guideDiv);
+  return guideDiv;
+}
+
+function mountMetricGuide() {
+  const guideDiv = ensureMetricsGuideContainer();
+  if (!guideDiv) return;
+
+  guideDiv.innerHTML = renderMetricGuideBlock();
+
+  if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
+}
+
 function renderLangBlocks(data) {
   if (!SELECTED_LANG) {
     return `
@@ -335,10 +336,8 @@ function createMatrixOverlayHTML() {
       <div class="matrix-rain-layer js-matrix-rain"></div>
       <p class="matrix-label">SCORING IN PROGRESS / 採点中</p>
     </div>
-    ${renderMetricGuideBlock()}
   `;
 }
-
 
 // ================================
 //  Matrix Rain (Build)
@@ -572,6 +571,7 @@ async function animateScoresSequential(container) {
 //  Click handler
 // ================================
 initLangToggle();
+mountMetricGuide(); // (ADDED) keep guide OUTSIDE result card; visible during scoring
 
 document.getElementById("send-btn").addEventListener("click", async () => {
   const prompt = document.getElementById("prompt-input").value;
@@ -709,8 +709,6 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         <pre>${JSON.stringify(rawData, null, 2)}</pre>
       </details>
     `;
-
-    {renderMetricGuideBlock()}
 
     if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
 
