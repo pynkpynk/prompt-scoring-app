@@ -703,13 +703,14 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       </div>
 
       ${renderLangBlocks(data)}
-      ${renderMetricGuideBlock()}
 
       <details style="margin-top:12px;">
         <summary>Debug: raw JSON</summary>
         <pre>${JSON.stringify(rawData, null, 2)}</pre>
       </details>
     `;
+
+    {renderMetricGuideBlock()}
 
     if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
 
