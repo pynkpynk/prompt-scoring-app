@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <title>Prompt Scoring App</title>
@@ -22,6 +22,7 @@
           <div class="lang-toggle">
             <button type="button" class="lang-btn is-active" data-lang="en">EN</button>
             <button type="button" class="lang-btn" data-lang="ja">JP</button>
+            <button type="button" class="lang-btn" data-lang="fr">FR</button>
           </div>
           
           <p class="app-subtitle">
@@ -31,20 +32,14 @@
 
         <main>
           <label for="prompt-input" class="label-title">
-            ✏️ プロンプトを入力 / ✏️ Enter your prompt
+            ✏️ プロンプトを入力 / ✏️ Enter your prompt / ✏️ Saisissez votre prompt
           </label>
 
           <textarea
             id="prompt-input"
             class="prompt-input"
-            placeholder="AIについて初心者でも分かるように説明して。 / Explain what AI is to a beginner."
+            placeholder="AIについて初心者でも分かるように説明して。 / Explain what AI is to a beginner. / Expliquez ce qu'est l'IA à un débutant."
           ></textarea>
-
-          <div class="controls-row">
-            <div
-              class="g-recaptcha"
-              data-sitekey="YOUR_RECAPTCHA_SITE_KEY"
-            ></div>
 
             <button id="send-btn" class="primary-button">
               Start!

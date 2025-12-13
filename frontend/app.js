@@ -19,19 +19,86 @@ window.API_BASE = API_BASE;
 // ================================
 let SELECTED_LANG = "en";
 
-// ===== Site-wide i18n helpers (ADDED) =====
+// ===== Site-wide i18n helpers  =====
 const LANG_STORAGE_KEY = "psa_lang";
+
+//  supported langs
+const SUPPORTED_LANGS = ["en", "ja", "fr"];
+
+// plain text translations (no " / ", no JP parens)
+const PLAIN_I18N = {
+  fr: {
+    "Start!": "Démarrer",
+    "スコア結果 / Score Results": "Résultats du score",
+    "サーバー側でエラーが発生しました。 / Server returned an error.": "Une erreur s'est produite côté serveur.",
+    "通信エラーが発生しました。 / Network error occurred.": "Une erreur réseau s'est produite.",
+    "プロンプトを入力してください。 / Enter your prompt.": "Veuillez saisir un prompt.",
+    "SCORING IN PROGRESS / 採点中": "NOTATION EN COURS",
+    "Debug: raw JSON": "Débogage : JSON brut",
+    "Comment (English)": "Commentaire",
+    "Improved Prompt (English)": "Prompt amélioré",
+    "Comment (English) / コメント（日本語）": "Commentaire",
+    "Improved Prompt (English) / 改善プロンプト（日本語）": "Prompt amélioré",
+    "Score Results": "Résultats",
+    "Overall（総合評価）": "Note globale",
+    "Overall": "Note globale",
+    "Comment": "Commentaire",
+    "Improved Prompt": "Prompt amélioré",
+    "コメント": "Commentaire",
+    "改善プロンプト": "Prompt amélioré",
+  },
+};
+
+// score label translations for FR (outside text of JP parens)
+const FR_SCORE_LABELS = {
+  Clarity: "Clarté",
+  Specificity: "Spécificité",
+  Constraints: "Contraintes",
+  Intent: "Intention",
+  Safety: "Sécurité",
+  Overall: "Note globale",
+};
+
+//  subtitle HTML translations (because subtitle is EN-only in HTML)
+const SUBTITLE_I18N_HTML = {
+  en: 'Score your prompts on <span>5 dimensions</span> with feedback and improved prompt',
+  ja: 'あなたのプロンプトを <span>5軸スコアリング</span> ＋ フィードバックと改善プロンプト',
+  fr: 'Évaluez vos prompts sur <span>5 dimensions</span> avec des retours et un prompt amélioré',
+};
 
 function hasJaChars(s) {
   return /[ぁ-んァ-ン一-龯]/.test(String(s || ""));
 }
 
+//  translate plain texts when needed
+function translatePlain(text, lang) {
+  if (!lang || lang === "en") return text;
+  const s = String(text || "");
+  const map = PLAIN_I18N[lang];
+  return map && map[s] ? map[s] : text;
+}
+
 function splitBySlash(text, lang) {
   const s = String(text || "");
-  if (!s.includes(" / ")) return s;
+  if (!s.includes(" / ")) return translatePlain(s, lang);
 
-  const parts = s.split(" / ");
-  const left = parts[0].trim();
+  const parts = s.split(" / ").map((p) => p.trim());
+
+  //  3-way support: "JA / EN / FR" (assume order)
+  if (parts.length >= 3) {
+    if (lang === "ja") return parts[0];
+    if (lang === "en") return parts[1];
+    if (lang === "fr") return parts[2];
+    return parts[1];
+  }
+
+  // FR fallback for 2-way strings
+  if (lang === "fr") {
+    const mapped = translatePlain(s, lang);
+    if (mapped !== s) return mapped;
+  }
+
+  const left = parts[0] || "";
   const right = parts.slice(1).join(" / ").trim();
 
   const leftJa = hasJaChars(left);
@@ -48,10 +115,14 @@ function splitBySlash(text, lang) {
 function splitByParen(text, lang) {
   const s = String(text || "");
   const m = s.match(/^\s*(.*?)（(.*?)）\s*$/);
-  if (!m) return s;
+  if (!m) return translatePlain(s, lang);
+
   const outside = (m[1] || "").trim();
   const inside = (m[2] || "").trim();
-  return lang === "ja" ? inside : outside;
+
+  if (lang === "ja") return inside;
+  if (lang === "fr") return FR_SCORE_LABELS[outside] || translatePlain(outside, lang);
+  return outside;
 }
 
 function localizeText(text, lang) {
@@ -59,7 +130,7 @@ function localizeText(text, lang) {
   if (String(text || "").includes(" / ")) return splitBySlash(text, lang);
   // 次に "（ ）"
   if (String(text || "").includes("（") && String(text || "").includes("）")) return splitByParen(text, lang);
-  return text;
+  return translatePlain(text, lang);
 }
 
 function selectSideFromHTML(html, lang) {
@@ -67,6 +138,18 @@ function selectSideFromHTML(html, lang) {
   if (!s.includes(" / ")) return s;
 
   const parts = s.split(" / ");
+
+  //  3-way support: "JA / EN / FR" (assume order)
+  if (parts.length >= 3) {
+    const leftHTML = parts[0];
+    const midHTML = parts[1];
+    const rightHTML = parts.slice(2).join(" / ");
+    if (lang === "ja") return leftHTML;
+    if (lang === "en") return midHTML;
+    if (lang === "fr") return rightHTML;
+    return midHTML;
+  }
+
   const leftHTML = parts[0];
   const rightHTML = parts.slice(1).join(" / ");
 
@@ -95,7 +178,14 @@ function applyLanguageToStaticUI(lang) {
   if (subtitle) {
     // 元HTMLを保持（1回だけ）
     if (!subtitle.dataset.i18nHtml) subtitle.dataset.i18nHtml = subtitle.innerHTML;
-    subtitle.innerHTML = selectSideFromHTML(subtitle.dataset.i18nHtml, lang);
+
+    // if subtitle is not " / " based, use map
+    if (subtitle.dataset.i18nHtml.includes(" / ")) {
+      subtitle.innerHTML = selectSideFromHTML(subtitle.dataset.i18nHtml, lang);
+    } else {
+      const mapped = SUBTITLE_I18N_HTML[lang];
+      subtitle.innerHTML = mapped ? mapped : subtitle.dataset.i18nHtml;
+    }
   }
 
   const label = document.querySelector(".label-title");
@@ -108,6 +198,13 @@ function applyLanguageToStaticUI(lang) {
   if (ta) {
     if (!ta.dataset.i18nPlaceholder) ta.dataset.i18nPlaceholder = ta.getAttribute("placeholder") || "";
     ta.setAttribute("placeholder", localizeText(ta.dataset.i18nPlaceholder, lang));
+  }
+
+  // localize Start button
+  const btn = document.getElementById("send-btn");
+  if (btn) {
+    if (!btn.dataset.i18nText) btn.dataset.i18nText = btn.textContent;
+    btn.textContent = localizeText(btn.dataset.i18nText, lang);
   }
 }
 
@@ -137,19 +234,20 @@ function initLangToggle() {
   const singleToggle = document.getElementById("lang-toggle");
   if (singleToggle) {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    SELECTED_LANG = saved === "en" || saved === "ja" ? saved : "en";
+    SELECTED_LANG = SUPPORTED_LANGS.includes(saved) ? saved : "en";
 
-    // 表示は「次に切り替える先」
-    singleToggle.textContent = SELECTED_LANG === "ja" ? "EN" : "JA";
+    // (ADDED) cycle through 3 langs
+    singleToggle.textContent = SELECTED_LANG.toUpperCase();
     singleToggle.setAttribute("aria-pressed", SELECTED_LANG === "en" ? "true" : "false");
 
     applyLanguageToPage(SELECTED_LANG);
 
     singleToggle.addEventListener("click", () => {
-      SELECTED_LANG = SELECTED_LANG === "ja" ? "en" : "ja";
+      const idx = SUPPORTED_LANGS.indexOf(SELECTED_LANG);
+      SELECTED_LANG = SUPPORTED_LANGS[(idx + 1) % SUPPORTED_LANGS.length];
       localStorage.setItem(LANG_STORAGE_KEY, SELECTED_LANG);
 
-      singleToggle.textContent = SELECTED_LANG === "ja" ? "EN" : "JA";
+      singleToggle.textContent = SELECTED_LANG.toUpperCase();
       singleToggle.setAttribute("aria-pressed", SELECTED_LANG === "en" ? "true" : "false");
 
       applyLanguageToPage(SELECTED_LANG);
@@ -160,7 +258,7 @@ function initLangToggle() {
 
   if (!buttons.length) {
     const saved = localStorage.getItem(LANG_STORAGE_KEY);
-    if (saved === "en" || saved === "ja") SELECTED_LANG = saved;
+    if (SUPPORTED_LANGS.includes(saved)) SELECTED_LANG = saved;
     applyLanguageToPage(SELECTED_LANG);
     return;
   }
@@ -168,9 +266,9 @@ function initLangToggle() {
   const active = buttons.find((b) => b.classList.contains("is-active"));
   const initialFromDom = active?.dataset.lang;
   const saved = localStorage.getItem(LANG_STORAGE_KEY);
-  const initial = (saved === "en" || saved === "ja") ? saved : initialFromDom;
+  const initial = SUPPORTED_LANGS.includes(saved) ? saved : initialFromDom;
 
-  SELECTED_LANG = initial === "en" || initial === "ja" ? initial : "en";
+  SELECTED_LANG = SUPPORTED_LANGS.includes(initial) ? initial : "en";
 
   // 初期 active を揃える（文字列は触らない）
   buttons.forEach((b) => b.classList.remove("is-active"));
@@ -182,7 +280,7 @@ function initLangToggle() {
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
       const lang = btn.dataset.lang;
-      if (lang !== "ja" && lang !== "en") return;
+      if (!SUPPORTED_LANGS.includes(lang)) return;
 
       SELECTED_LANG = lang;
       localStorage.setItem(LANG_STORAGE_KEY, SELECTED_LANG);
@@ -224,6 +322,17 @@ function renderLangBlocks(data) {
     `;
   }
 
+  // FRのみ
+  if (SELECTED_LANG === "fr") {
+    return `
+      <h3>Comment</h3>
+      <pre>${data.commentFr || "(Aucun commentaire fourni.)"}</pre>
+
+      <h3>Improved Prompt</h3>
+      <pre>${data.improvedFr || "(Aucun prompt amélioré fourni.)"}</pre>
+    `;
+  }
+
   // ENのみ
   return `
       <h3>Comment (English)</h3>
@@ -262,17 +371,24 @@ function buildMatrixRain(container, opts = {}) {
 
   const jpBase = "採点中";
   const enBase = "SCORINGINPROGRESS"; // スペースは省略（雨で見えやすい）
+  const frBase = "NOTATIONENCOURS";    // fr "SCORING IN PROGRESS"
   container.innerHTML = "";
 
   for (let i = 0; i < columns; i++) {
     const col = document.createElement("div");
     col.className = "matrix-col";
 
-    // 列タイプ（JP/EN）
-    const isJP = Math.random() < jpWeight;
-    const base = isJP ? jpBase : enBase;
+    // 列タイプ（JP/EN/FR）
+    let base;
+    if (SELECTED_LANG === "ja") base = jpBase;
+    else if (SELECTED_LANG === "fr") base = frBase;
+    else if (SELECTED_LANG === "en") base = enBase;
+    else {
+      const isJP = Math.random() < jpWeight;
+      base = isJP ? jpBase : enBase;
+    }
 
-    // CSS変数（あなたのCSSに合わせる）
+    // CSS変数
     const x = Math.random() * 100;
     const dur = rand(4000, 8200);
     const delay = -rand(0, 6000);
@@ -415,8 +531,10 @@ function normalizeResponse(raw) {
 
   const commentJa = raw.comment_ja ?? raw.comment ?? "";
   const commentEn = raw.comment_en ?? "";
+  const commentFr = raw.comment_fr ?? "";                 // (ADDED)
   const improvedJa = raw.improved_prompt_ja ?? "";
   const improvedEn = raw.improved_prompt_en ?? "";
+  const improvedFr = raw.improved_prompt_fr ?? "";        // (ADDED)
 
   return {
     clarity,
@@ -427,8 +545,10 @@ function normalizeResponse(raw) {
     overall,
     commentJa,
     commentEn,
+    commentFr,        // (ADDED)
     improvedJa,
     improvedEn,
+    improvedFr,       // (ADDED)
     raw,
   };
 }
@@ -519,7 +639,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
     glitchMaxMs: 140,
   });
 
-  // ボタン連打防止（任意）
+  // ボタン連打防止（念のため）
   btn.disabled = true;
 
   const startedAt = performance.now();
