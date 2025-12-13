@@ -448,7 +448,115 @@ body {
   }
 }
 
-/* ===== Metrics guide ===== */
+/* ======　Metrics Guide　====== */
 .metrics-guide {
   margin-top: 14px;
+}
+
+.metrics-guide .metrics-help {
+  border: 1px solid rgba(34, 197, 94, 0.22);
+  background: rgba(2, 6, 23, 0.55);
+  border-radius: 18px;
+  padding: 14px 14px 12px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(34, 197, 94, 0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* summary（見出し） */
+.metrics-guide .metrics-help > summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  font-family: "Press Start 2P", system-ui;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(187, 247, 208, 0.92);
+  background: rgba(15, 23, 42, 0.45);
+
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  transition: transform 0.08s ease-out, filter 0.12s ease-out, box-shadow 0.12s ease-out;
+}
+
+/* default arrow消し（Chrome系） */
+.metrics-guide .metrics-help > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* 擬似アイコン（開閉で回転） */
+.metrics-guide .metrics-help > summary::after {
+  content: "▾";
+  font-size: 12px;
+  opacity: 0.85;
+  transform: rotate(0deg);
+  transition: transform 0.16s ease-out, opacity 0.16s ease-out;
+}
+
+.metrics-guide .metrics-help[open] > summary::after {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.metrics-guide .metrics-help > summary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.20);
+}
+
+.metrics-guide .metrics-help > summary:focus-visible {
+  outline: 2px solid rgba(34, 197, 94, 0.65);
+  outline-offset: 3px;
+}
+
+/* 本文 */
+.metrics-guide .metrics-help p {
+  margin: 10px 6px 0;
+  color: rgba(226, 232, 240, 0.88);
+  font-family: "DotGothic16", system-ui;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 軸名 */
+.metrics-guide .metrics-help .metric-name {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
+
+  font-family: "Press Start 2P", system-ui;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: rgba(224, 231, 255, 0.95);
+  text-shadow: 0 0 10px rgba(96, 165, 250, 0.16);
+}
+
+/* 最初の区切り線は消す */
+.metrics-guide .metrics-help .metric-name:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* モバイルで少し詰める */
+@media (max-width: 520px) {
+  .metrics-guide .metrics-help {
+    padding: 12px 12px 10px;
+    border-radius: 16px;
+  }
+  .metrics-guide .metrics-help > summary {
+    padding: 10px 10px;
+    font-size: 10px;
+  }
+  .metrics-guide .metrics-help p {
+    font-size: 13px;
+  }
 }
