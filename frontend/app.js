@@ -39,6 +39,7 @@ const I18N_OVERRIDES = {
     "Constraints（制約性）": "Contraintes",
     "Intent（意図性）": "Intention",
     "Safety（安全性）": "Sécurité",
+    "Evaluability（検証可能性）": "Vérifiabilité",
   },
   ja: {
     // subtitle etc. are handled in applyLanguageToStaticUI
@@ -179,20 +180,6 @@ function applyLanguageToPage(lang) {
 }
 
 function initLangToggle() {
-  // (ADDED) ensure FR button exists (HTMLに無くても追加する)
-  const toggleWrap = document.querySelector(".lang-toggle");
-  if (toggleWrap) {
-    const existingFr = toggleWrap.querySelector('.lang-btn[data-lang="fr"]');
-    if (!existingFr) {
-      const frBtn = document.createElement("button");
-      frBtn.type = "button";
-      frBtn.className = "lang-btn";
-      frBtn.dataset.lang = "fr";
-      frBtn.textContent = "FR";
-      toggleWrap.appendChild(frBtn);
-    }
-  }
-
   const buttons = Array.from(document.querySelectorAll(".lang-btn"));
 
   if (!buttons.length) {
@@ -233,7 +220,7 @@ function initLangToggle() {
 
 function renderMetricGuideBlock() {
   return `
-    <details class="metrics-help" open>
+    <details class="metrics-help">
       <summary>スコアの見方 / How to read the scores / Comment lire les scores</summary>
 
       <p class="metric-name">Clarity（明瞭性）</p>
@@ -251,8 +238,11 @@ function renderMetricGuideBlock() {
       <p class="metric-name">Safety（安全性）</p>
       <p>危険・違法・機密・不適切な依頼を避けているか（または慎重に扱っているか）。 / How safe and responsible the requested behavior/content is. / Le niveau de sûreté et de responsabilité de la demande (illégal, dangereux, données sensibles, etc.).</p>
 
+      <p class="metric-name">Evaluability（検証可能性）</p>
+      <p>出力が検証・テストできる形になっているか（形式、チェック項目、成功条件、引用要求など）。 / How testable/verifiable the requested output is (format, checks, success criteria, citations/tests). / Dans quelle mesure la sortie est vérifiable/testable (format, critères de réussite, points de contrôle, citations/tests).</p>
+
       <p class="metric-name">Overall（総合評価）</p>
-      <p>5軸を平均せず、実運用での「出力の安定性・使いやすさ」を総合的に見たスコア。 / A holistic score (not an average) reflecting practical usefulness and reliability. / Un score global (non-moyenné) reflétant l’utilité pratique et la fiabilité.</p>
+      <p>各軸を平均せず、実運用での「出力の安定性・使いやすさ」を総合的に見たスコア。 / A holistic score (not an average) reflecting practical usefulness and reliability. / Un score global (non-moyenné) reflétant l’utilité pratique et la fiabilité.</p>
     </details>
   `;
 }
@@ -488,11 +478,27 @@ function normalizeResponse(raw) {
   const intent = root.intent ?? root.Intent ?? 0;
   const safety = root.safety ?? root.Safety ?? 0;
 
+  // (ADDED) evaluability / verifiability
+  const evaluability =
+    root.evaluability ??
+    root.verifiability ??
+    root.Evaluability ??
+    root.Verifiability ??
+    0;
+
+  const hasEval =
+    root.evaluability != null ||
+    root.verifiability != null ||
+    root.Evaluability != null ||
+    root.Verifiability != null;
+
   const overallRaw = root.overall ?? root.Overall;
   const overall =
     overallRaw != null
       ? overallRaw
-      : Math.round((clarity + specificity + constraints + intent + safety) / 5);
+      : hasEval
+        ? Math.round((clarity + specificity + constraints + intent + safety + evaluability) / 6)
+        : Math.round((clarity + specificity + constraints + intent + safety) / 5);
 
   const commentJa = raw.comment_ja ?? raw.comment ?? "";
   const commentEn = raw.comment_en ?? "";
@@ -507,6 +513,7 @@ function normalizeResponse(raw) {
     constraints,
     intent,
     safety,
+    evaluability,
     overall,
     commentJa,
     commentEn,
@@ -553,8 +560,8 @@ function animateScore(element, duration = 1200) {
 
 async function animateScoresSequential(container) {
   const nodes = Array.from(container.querySelectorAll(".js-score"));
-  const normalNodes = nodes.slice(0, 5);
-  const overallNode = nodes[5];
+  const normalNodes = nodes.slice(0, 6);
+  const overallNode = nodes[6];
 
   for (const node of normalNodes) {
     await animateScore(node, 1100);
@@ -690,6 +697,13 @@ document.getElementById("send-btn").addEventListener("click", async () => {
           <div class="score-value ${getScoreClass(
             data.safety
           )} js-score" data-target="${data.safety}">0</div>
+        </div>
+
+        <div class="score-item">
+          <div class="score-label">Evaluability（検証可能性）</div>
+          <div class="score-value ${getScoreClass(
+            data.evaluability
+          )} js-score" data-target="${data.evaluability}">0</div>
         </div>
       </div>
 

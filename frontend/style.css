@@ -448,28 +448,31 @@ body {
   }
 }
 
-/* ======　Metrics Guide　====== */
+/* ================================
+   Metrics Guide (match result card)
+================================ */
 .metrics-guide {
   margin-top: 14px;
 }
 
 .metrics-guide .metrics-help {
-  border: 1px solid rgba(34, 197, 94, 0.22);
-  background: rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(2, 6, 23, 0.58);
   border-radius: 18px;
   padding: 14px 14px 12px;
   box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.35),
-    0 0 18px rgba(34, 197, 94, 0.10);
+    0 10px 28px rgba(0, 0, 0, 0.38),
+    0 0 18px rgba(96, 165, 250, 0.10);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
 
-/* summary（見出し） */
+/* summary（結果カードの見出し感に寄せる） */
 .metrics-guide .metrics-help > summary {
   list-style: none;
   cursor: pointer;
   user-select: none;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -480,11 +483,12 @@ body {
   font-family: "Press Start 2P", system-ui;
   font-size: 11px;
   letter-spacing: 0.08em;
-  color: rgba(187, 247, 208, 0.92);
-  background: rgba(15, 23, 42, 0.45);
 
-  border: 1px solid rgba(34, 197, 94, 0.18);
-  box-shadow: 0 0 0 rgba(34, 197, 94, 0);
+  color: rgba(224, 231, 255, 0.92);
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+
+  box-shadow: 0 0 0 rgba(96, 165, 250, 0);
   transition: transform 0.08s ease-out, filter 0.12s ease-out, box-shadow 0.12s ease-out;
 }
 
@@ -493,7 +497,7 @@ body {
   display: none;
 }
 
-/* 擬似アイコン（開閉で回転） */
+/* 右側アイコン（開閉で回転） */
 .metrics-guide .metrics-help > summary::after {
   content: "▾";
   font-size: 12px;
@@ -508,13 +512,13 @@ body {
 }
 
 .metrics-guide .metrics-help > summary:hover {
-  filter: brightness(1.08);
+  filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 0 14px rgba(34, 197, 94, 0.20);
+  box-shadow: 0 0 14px rgba(96, 165, 250, 0.22);
 }
 
 .metrics-guide .metrics-help > summary:focus-visible {
-  outline: 2px solid rgba(34, 197, 94, 0.65);
+  outline: 2px solid rgba(96, 165, 250, 0.65);
   outline-offset: 3px;
 }
 
@@ -531,11 +535,12 @@ body {
 .metrics-guide .metrics-help .metric-name {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid rgba(148, 163, 184, 0.16);
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
 
   font-family: "Press Start 2P", system-ui;
   font-size: 11px;
   letter-spacing: 0.08em;
+
   color: rgba(224, 231, 255, 0.95);
   text-shadow: 0 0 10px rgba(96, 165, 250, 0.16);
 }
@@ -546,7 +551,7 @@ body {
   padding-top: 0;
 }
 
-/* モバイルで少し詰める */
+/* モバイル調整 */
 @media (max-width: 520px) {
   .metrics-guide .metrics-help {
     padding: 12px 12px 10px;
