@@ -9,7 +9,7 @@ from .llm_scoring import score_prompt_with_llm
 
 class PromptRequest(BaseModel):
     prompt: str
-    lang: Optional[Literal["ja", "en"]] = "en"
+    lang: Optional[Literal["ja", "en", "fr"]] = "en"
 
 app = FastAPI(title="Prompt Scoring API v1 (LLM powered)")
 
@@ -46,18 +46,18 @@ def score_prompt(req: PromptRequest, response: Response) -> PromptScore:
     LLMを使って実際にプロンプトを5軸で採点するエンドポイント。
     """
     try:
-        # ★ ここで「バックエンドが受け取った lang」をヘッダに載せて可視化
         response.headers["X-PSA-LANG"] = str(req.lang or "")
 
         result = score_prompt_with_llm(req.prompt, lang=req.lang)
 
-        # ★ バックエンド側で“確実に”片言語を空にする（ここが効けば Debug JSON も空になる）
-        if req.lang == "en":
-            result.comment_ja = ""
-            result.improved_prompt_ja = ""
-        elif req.lang == "ja":
+        # スキーマ互換のため「未使用言語」は空文字で返す
+        if req.lang == "ja":
             result.comment_en = ""
             result.improved_prompt_en = ""
+        else:
+            # en / fr は comment_en 側に返す（frは中身をフランス語で生成）
+            result.comment_ja = ""
+            result.improved_prompt_ja = ""
 
         return result
     except Exception as e:

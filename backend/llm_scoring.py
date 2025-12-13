@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from openai import OpenAI
 from .models import PromptScore
@@ -19,138 +19,12 @@ client = OpenAI(api_key=api_key)
 MODEL_NAME = "gpt-5-mini"
 
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT_TEMPLATE = """
 You are an expert prompt engineer and prompt quality evaluator.
 
-You MUST always respond with a single valid JSON object and nothing else.
-- Do NOT add any explanation before or after the JSON.
-- Do NOT wrap the JSON in code fences (no ```json).
-- All natural language text MUST be inside JSON string values.
-- Markdown is allowed inside string values (e.g., bullet lists, headings),
-  but the overall response must remain valid JSON.
+Return ONLY a single valid JSON object with EXACTLY these keys:
 
-# 1. Goal
-
-Given a single user prompt (in any language), you must:
-1) evaluate its quality on 5 metrics, and
-2) propose improved versions of the prompt in both English and Japanese.
-
-Your evaluation should be consistent, reproducible, and practically useful for real LLM usage.
-
-# 2. Metrics (0–100, integers only)
-
-Score each metric independently from 0 to 100 (higher is better).
-Do NOT try to make the metrics “balanced” or averaged; judge each on its own merits.
-
-- clarity
-- specificity
-- constraints
-- intent
-- safety
-
-Use integer scores only (no decimals).
-
-# 3. Overall score (holistic, independent)
-
-You must also output "overall", an independent holistic score from 0 to 100 (integer).
-
-"overall" is NOT a mathematical average of the 5 metrics.
-It should reflect:
-
-- how effective the prompt is for real LLM usage,
-- how likely it is to produce high-quality and reliable output,
-- how well the user’s intent is communicated,
-- how easy it is for the LLM to follow,
-- how actionable and well-structured the prompt is.
-
-Rough bands (for your internal calibration, do NOT output these labels):
-
-- 0–39   : Weak prompt; needs substantial rewriting.
-- 40–59  : Below average; usable but under-specified or messy.
-- 60–79  : Average to good; usable but clearly improvable.
-- 80–100 : Strong; only minor improvements needed.
-
-4. Improved prompts (EN/JA)
-
-Your task is to rewrite the user's prompt into better prompts in both English and Japanese.
-
-You MUST return ONLY the following two fields:
-
-- improved_prompt_en
-- improved_prompt_ja
-
-Each field must contain ONE complete prompt string.
-
-Requirements for both improved prompts:
-
-- Preserve all explicit requirements, constraints, and important details from the original prompt.
-- Preserve the user’s underlying intent; do NOT change the task or add new goals.
-- You may add minimal, reasonable assumptions ONLY when necessary to resolve ambiguity.
-- Use clear, concise, professional language that is easy for an LLM to follow.
-- Make each version natural in its target language:
-  - improved_prompt_en → natural, fluent English
-  - improved_prompt_ja → 自然で読みやすい日本語
-- Do NOT mention that it is an “improved prompt” inside the prompt text itself.
-- The prompts MUST be directly usable as instructions for an LLM (no meta-comments).
-- You MAY use Markdown inside each string (headings, bullet lists, numbered steps) if it improves structure.
-
-If the original prompt is already high-quality, keep your changes minimal
-(e.g., reorder, clarify wording, improve structure) rather than rewriting it from scratch.
-
-
-# 5. Feedback comments (Markdown allowed, focus on improvements)
-
-You will provide feedback on the *original* user prompt.
-You MAY use Markdown formatting in your comments.
-
-You must provide feedback in both English and Japanese, using exactly these two fields:
-
-- comment_en
-- comment_ja
-
-Each field MUST follow this structure:
-
-1. 2–5 concise sentences that:
-   - briefly summarize the main strengths of the original prompt, and
-   - focus on concrete, actionable improvement tips.
-2. Followed by a short Markdown bullet list with:
-   - 1–2 bullets for strengths, and
-   - 2–4 bullets for improvement points.
-
-Requirements for each field:
-
-- comment_en:
-  - Write in natural, fluent, professional English.
-  - Emphasize clarity, specificity, constraints, and output format as needed.
-
-- comment_ja:
-  - Provide the *same substantive feedback* as comment_en,
-    but expressed in 自然で読みやすい日本語.
-  - It does NOT need to be a word-for-word translation; preserve meaning and nuance.
-
-General rules:
-
-- Focus on how to make the original prompt more effective for real LLM use
-  (e.g., clearer intent, better constraints, explicit output format).
-- Do NOT add meta-comments about this feedback task itself.
-- Do NOT evaluate the *content* of the user’s domain (e.g., business topic, story idea);
-  only critique the prompt as an instruction to an LLM.
-
-# 6. Safety
-
-"safety" should reflect how safe and responsible the requested behavior and content is.
-
-- High score if the prompt clearly avoids harmful, illegal, confidential or disallowed content,
-  or handles sensitive topics cautiously.
-- Low score if it pushes for harmful, abusive, illegal, or policy-violating content and includes confidential information.
-
-# 7. Output rules (VERY IMPORTANT)
-
-You MUST output JSON ONLY, with no extra text.
-
-The JSON must have exactly these keys and structure:
-
-{
+{{
   "clarity": number,
   "specificity": number,
   "constraints": number,
@@ -161,14 +35,36 @@ The JSON must have exactly these keys and structure:
   "comment_ja": "string",
   "improved_prompt_ja": "string",
   "improved_prompt_en": "string"
-}
+}}
 
-Additional rules:
+Rules:
+- Integers only (0–100) for all numeric fields.
+- "overall" is holistic and NOT a mathematical average.
+- Markdown is allowed inside string values.
+- Output JSON only. No extra text.
 
-- Use integers (0–100) for all numeric fields.
-- Do NOT include any trailing commas in the JSON.
-- Do NOT include comments inside the JSON.
-- All line breaks, bullet lists, and Markdown must be inside string values.
+Requested output language: {LANG}
+
+Language behavior (IMPORTANT):
+- If LANG == "ja":
+  - Write "comment_ja" and "improved_prompt_ja" in natural Japanese.
+  - Set "comment_en" = "" and "improved_prompt_en" = "".
+- If LANG == "en":
+  - Write "comment_en" and "improved_prompt_en" in natural English.
+  - Set "comment_ja" = "" and "improved_prompt_ja" = "".
+- If LANG == "fr":
+  - Write "comment_en" and "improved_prompt_en" in natural French.
+  - Set "comment_ja" = "" and "improved_prompt_ja" = "".
+
+Comment format (for the used comment field only):
+- 2–5 concise sentences summarizing strengths + actionable improvement tips
+- then a short Markdown bullet list:
+  - 1–2 bullets for strengths
+  - 2–4 bullets for improvement points
+
+Improved prompt (for the used improved_prompt field only):
+- Preserve all explicit requirements/constraints and the user’s intent.
+- Make it directly usable as an instruction for an LLM.
 """
 
 
@@ -205,61 +101,26 @@ def _parse_json_text(text: str) -> Dict[str, Any]:
     raise ValueError(f"LLM returned non-JSON content: {s}")
 
 
-def _lang_override_system_prompt(lang: str | None) -> str | None:
-    """
-    Reduce generation based on lang:
-    - en: generate only comment_en & improved_prompt_en; return JA fields as "".
-    - ja: generate only comment_ja & improved_prompt_ja; return EN fields as "".
-    Keep the JSON schema unchanged.
-    """
-    if lang == "en":
-        return (
-            "IMPORTANT OVERRIDE FOR THIS RUN:\n"
-            'Return the SAME JSON schema, but generate ONLY the English text fields:\n'
-            '- comment_en\n'
-            '- improved_prompt_en\n'
-            'Set these Japanese fields to empty strings exactly:\n'
-            '- comment_ja: ""\n'
-            '- improved_prompt_ja: ""\n'
-            "Keep all numeric scores as usual (0–100 integers).\n"
-            "Be concise and do NOT translate.\n"
-        )
-    if lang == "ja":
-        return (
-            "IMPORTANT OVERRIDE FOR THIS RUN:\n"
-            'Return the SAME JSON schema, but generate ONLY the Japanese text fields:\n'
-            '- comment_ja\n'
-            '- improved_prompt_ja\n'
-            'Set these English fields to empty strings exactly:\n'
-            '- comment_en: ""\n'
-            '- improved_prompt_en: ""\n'
-            "Keep all numeric scores as usual (0–100 integers).\n"
-            "Be concise and do NOT translate.\n"
-        )
-    return None
-
-
 def call_llm_for_scoring(
     user_prompt: str,
-    model_name: str | None = None,
-    lang: str | None = None,
+    model_name: Optional[str] = None,
+    lang: Optional[str] = "en",
 ) -> Dict[str, Any]:
-    
+
     model = model_name or MODEL_NAME
+    lang_norm = (lang or "en").strip().lower()
+    if lang_norm not in ("ja", "en", "fr"):
+        lang_norm = "en"
 
-    override = _lang_override_system_prompt(lang)
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-    ]
-    if override:
-        messages.append({"role": "system", "content": override})
-    messages.append({"role": "user", "content": user_prompt})
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.replace("{LANG}", lang_norm)
 
     response = client.chat.completions.create(
         model=model,
         response_format={"type": "json_object"},
-        messages=messages,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
     )
 
     message = response.choices[0].message
@@ -286,10 +147,10 @@ def call_llm_for_scoring(
 
 def score_prompt_with_llm(
     user_prompt: str,
-    model_name: str | None = None,
-    lang: str | None = None,
+    model_name: Optional[str] = None,
+    lang: Optional[str] = "en",
 ) -> PromptScore:
-    
+
     data = call_llm_for_scoring(
         user_prompt=user_prompt,
         model_name=model_name,
@@ -304,19 +165,6 @@ def score_prompt_with_llm(
         v = round(v)
         return max(0, min(100, int(v)))
 
-    comment_en = str(data.get("comment_en", ""))
-    comment_ja = str(data.get("comment_ja", ""))
-    improved_prompt_ja = str(data.get("improved_prompt_ja", ""))
-    improved_prompt_en = str(data.get("improved_prompt_en", ""))
-
-    # 強制的に片言語を空にして、速度改善の意図を確実にする（スキーマ互換のため）
-    if lang == "en":
-        comment_ja = ""
-        improved_prompt_ja = ""
-    elif lang == "ja":
-        comment_en = ""
-        improved_prompt_en = ""
-
     return PromptScore(
         clarity=to_int_0_100(data.get("clarity")),
         specificity=to_int_0_100(data.get("specificity")),
@@ -324,8 +172,8 @@ def score_prompt_with_llm(
         intent=to_int_0_100(data.get("intent")),
         safety=to_int_0_100(data.get("safety")),
         overall=to_int_0_100(data.get("overall")),
-        comment_en=comment_en,
-        comment_ja=comment_ja,
-        improved_prompt_ja=improved_prompt_ja,
-        improved_prompt_en=improved_prompt_en,
+        comment_en=str(data.get("comment_en", "")),
+        comment_ja=str(data.get("comment_ja", "")),
+        improved_prompt_ja=str(data.get("improved_prompt_ja", "")),
+        improved_prompt_en=str(data.get("improved_prompt_en", "")),
     )
