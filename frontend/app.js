@@ -17,15 +17,167 @@ window.API_BASE = API_BASE;
 //  - If .lang-btn exists, use it ("ja" / "en")
 //  - If not, keep bilingual (SELECTED_LANG = null) for backward compatibility
 // ================================
-let SELECTED_LANG = null;
+let SELECTED_LANG = "en";
+
+// ===== Site-wide i18n helpers (ADDED) =====
+const LANG_STORAGE_KEY = "psa_lang";
+
+function hasJaChars(s) {
+  return /[ぁ-んァ-ン一-龯]/.test(String(s || ""));
+}
+
+function splitBySlash(text, lang) {
+  const s = String(text || "");
+  if (!s.includes(" / ")) return s;
+
+  const parts = s.split(" / ");
+  const left = parts[0].trim();
+  const right = parts.slice(1).join(" / ").trim();
+
+  const leftJa = hasJaChars(left);
+  const rightJa = hasJaChars(right);
+
+  // "JP / EN" or "EN / JP" 両対応
+  if (leftJa && !rightJa) return lang === "ja" ? left : right;
+  if (!leftJa && rightJa) return lang === "ja" ? right : left;
+
+  // 判定できない場合は左=ja想定
+  return lang === "ja" ? left : right;
+}
+
+function splitByParen(text, lang) {
+  const s = String(text || "");
+  const m = s.match(/^\s*(.*?)（(.*?)）\s*$/);
+  if (!m) return s;
+  const outside = (m[1] || "").trim();
+  const inside = (m[2] || "").trim();
+  return lang === "ja" ? inside : outside;
+}
+
+function localizeText(text, lang) {
+  // 先に " / " を優先
+  if (String(text || "").includes(" / ")) return splitBySlash(text, lang);
+  // 次に "（ ）"
+  if (String(text || "").includes("（") && String(text || "").includes("）")) return splitByParen(text, lang);
+  return text;
+}
+
+function selectSideFromHTML(html, lang) {
+  const s = String(html || "");
+  if (!s.includes(" / ")) return s;
+
+  const parts = s.split(" / ");
+  const leftHTML = parts[0];
+  const rightHTML = parts.slice(1).join(" / ");
+
+  const tmp = document.createElement("div");
+  tmp.innerHTML = leftHTML;
+  const leftText = tmp.textContent || "";
+
+  tmp.innerHTML = rightHTML;
+  const rightText = tmp.textContent || "";
+
+  const leftJa = hasJaChars(leftText);
+  const rightJa = hasJaChars(rightText);
+
+  if (leftJa && !rightJa) return lang === "ja" ? leftHTML : rightHTML;
+  if (!leftJa && rightJa) return lang === "ja" ? rightHTML : leftHTML;
+
+  return lang === "ja" ? leftHTML : rightHTML;
+}
+
+function applyLanguageToStaticUI(lang) {
+  if (!lang) return;
+
+  document.documentElement.lang = lang;
+
+  const subtitle = document.querySelector(".app-subtitle");
+  if (subtitle) {
+    // 元HTMLを保持（1回だけ）
+    if (!subtitle.dataset.i18nHtml) subtitle.dataset.i18nHtml = subtitle.innerHTML;
+    subtitle.innerHTML = selectSideFromHTML(subtitle.dataset.i18nHtml, lang);
+  }
+
+  const label = document.querySelector(".label-title");
+  if (label) {
+    if (!label.dataset.i18nText) label.dataset.i18nText = label.textContent;
+    label.textContent = localizeText(label.dataset.i18nText, lang);
+  }
+
+  const ta = document.getElementById("prompt-input");
+  if (ta) {
+    if (!ta.dataset.i18nPlaceholder) ta.dataset.i18nPlaceholder = ta.getAttribute("placeholder") || "";
+    ta.setAttribute("placeholder", localizeText(ta.dataset.i18nPlaceholder, lang));
+  }
+}
+
+function localizeResultCard(root, lang) {
+  if (!root || !lang) return;
+
+  // pre は JSON や本文なので触らない
+  const targets = root.querySelectorAll("h2, h3, p, summary, .score-label, .overall-label, .matrix-label");
+  targets.forEach((el) => {
+    const original = el.textContent || "";
+    const localized = localizeText(original, lang);
+    if (localized !== original) el.textContent = localized;
+  });
+}
+
+function applyLanguageToPage(lang) {
+  if (!lang) return;
+  applyLanguageToStaticUI(lang);
+  const resultDiv = document.getElementById("result");
+  if (resultDiv) localizeResultCard(resultDiv, lang);
+}
 
 function initLangToggle() {
   const buttons = Array.from(document.querySelectorAll(".lang-btn"));
-  if (!buttons.length) return;
+
+  // (ADDED) one-click toggle: #lang-toggle があればそれを優先
+  const singleToggle = document.getElementById("lang-toggle");
+  if (singleToggle) {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    SELECTED_LANG = saved === "en" || saved === "ja" ? saved : "en";
+
+    // 表示は「次に切り替える先」
+    singleToggle.textContent = SELECTED_LANG === "ja" ? "EN" : "JA";
+    singleToggle.setAttribute("aria-pressed", SELECTED_LANG === "en" ? "true" : "false");
+
+    applyLanguageToPage(SELECTED_LANG);
+
+    singleToggle.addEventListener("click", () => {
+      SELECTED_LANG = SELECTED_LANG === "ja" ? "en" : "ja";
+      localStorage.setItem(LANG_STORAGE_KEY, SELECTED_LANG);
+
+      singleToggle.textContent = SELECTED_LANG === "ja" ? "EN" : "JA";
+      singleToggle.setAttribute("aria-pressed", SELECTED_LANG === "en" ? "true" : "false");
+
+      applyLanguageToPage(SELECTED_LANG);
+    });
+
+    return;
+  }
+
+  if (!buttons.length) {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved === "en" || saved === "ja") SELECTED_LANG = saved;
+    applyLanguageToPage(SELECTED_LANG);
+    return;
+  }
 
   const active = buttons.find((b) => b.classList.contains("is-active"));
-  const initial = active?.dataset.lang;
-  SELECTED_LANG = initial === "en" || initial === "ja" ? initial : "ja";
+  const initialFromDom = active?.dataset.lang;
+  const saved = localStorage.getItem(LANG_STORAGE_KEY);
+  const initial = (saved === "en" || saved === "ja") ? saved : initialFromDom;
+
+  SELECTED_LANG = initial === "en" || initial === "ja" ? initial : "en";
+
+  // 初期 active を揃える（文字列は触らない）
+  buttons.forEach((b) => b.classList.remove("is-active"));
+  const initBtn = buttons.find((b) => b.dataset.lang === SELECTED_LANG);
+  if (initBtn) initBtn.classList.add("is-active");
+
+  applyLanguageToPage(SELECTED_LANG);
 
   buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -33,8 +185,12 @@ function initLangToggle() {
       if (lang !== "ja" && lang !== "en") return;
 
       SELECTED_LANG = lang;
+      localStorage.setItem(LANG_STORAGE_KEY, SELECTED_LANG);
+
       buttons.forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
+
+      applyLanguageToPage(SELECTED_LANG);
     });
   });
 }
@@ -339,11 +495,18 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   if (!prompt.trim()) {
     resultDiv.innerHTML =
       "<p>プロンプトを入力してください。 / Enter your prompt.</p>";
+
+    // (ADDED) 選択言語があるなら表示も寄せる
+    if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
+
     return;
   }
 
   // ローディング表示
   resultDiv.innerHTML = createMatrixOverlayHTML();
+
+  // (ADDED) overlay の "SCORING... / 採点中" も寄せる
+  if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
 
   const rainRoot = resultDiv.querySelector(".js-matrix-rain");
   buildMatrixRain(rainRoot, { columns: 34, density: 28, jpWeight: 0.5 });
@@ -394,6 +557,10 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         <p>サーバー側でエラーが発生しました。 / Server returned an error.</p>
         <pre>${errText}</pre>
       `;
+
+      // (ADDED) 選択言語があるなら表示も寄せる
+      if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
+
       return;
     }
 
@@ -453,6 +620,9 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       </details>
     `;
 
+    // (ADDED) 結果カード内の " / " や "X（Y）" を選択言語に寄せる
+    if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
+
     await animateScoresSequential(resultDiv);
   } catch (err) {
     console.error(err);
@@ -462,6 +632,10 @@ document.getElementById("send-btn").addEventListener("click", async () => {
       <p>通信エラーが発生しました。 / Network error occurred.</p>
       <pre>${String(err)}</pre>
     `;
+
+    // (ADDED) 選択言語があるなら表示も寄せる
+    if (SELECTED_LANG) applyLanguageToPage(SELECTED_LANG);
+
   } finally {
     btn.disabled = false;
   }
