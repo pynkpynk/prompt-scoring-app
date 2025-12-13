@@ -1,10 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from typing import Optional, Literal
 from pydantic import BaseModel
 
-from .models import PromptScore
+from .models import PromptRequest, PromptScore
 from .llm_scoring import score_prompt_with_llm
 
 class PromptRequest(BaseModel):
@@ -36,13 +36,29 @@ def health_check():
     return {"status": "ok"}
 
 
+class PromptRequestWithLang(PromptRequest):
+    lang: Optional[str] = None
+
+
 @app.post("/score", response_model=PromptScore)
-def score_prompt(req: PromptRequest) -> PromptScore:
+def score_prompt(req: PromptRequest, response: Response) -> PromptScore:
     """
     LLMを使って実際にプロンプトを5軸で採点するエンドポイント。
     """
     try:
+        # ★ ここで「バックエンドが受け取った lang」をヘッダに載せて可視化
+        response.headers["X-PSA-LANG"] = str(req.lang or "")
+
         result = score_prompt_with_llm(req.prompt, lang=req.lang)
+
+        # ★ バックエンド側で“確実に”片言語を空にする（ここが効けば Debug JSON も空になる）
+        if req.lang == "en":
+            result.comment_ja = ""
+            result.improved_prompt_ja = ""
+        elif req.lang == "ja":
+            result.comment_en = ""
+            result.improved_prompt_en = ""
+
         return result
     except Exception as e:
         raise HTTPException(
