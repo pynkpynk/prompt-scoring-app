@@ -13,6 +13,72 @@ const API_BASE =
 window.API_BASE = API_BASE;
 
 // ================================
+//  Language Toggle (Optional)
+//  - If .lang-btn exists, use it ("ja" / "en")
+//  - If not, keep bilingual (SELECTED_LANG = null) for backward compatibility
+// ================================
+let SELECTED_LANG = null;
+
+function initLangToggle() {
+  const buttons = Array.from(document.querySelectorAll(".lang-btn"));
+  if (!buttons.length) return;
+
+  const active = buttons.find((b) => b.classList.contains("is-active"));
+  const initial = active?.dataset.lang;
+  SELECTED_LANG = initial === "en" || initial === "ja" ? initial : "ja";
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const lang = btn.dataset.lang;
+      if (lang !== "ja" && lang !== "en") return;
+
+      SELECTED_LANG = lang;
+      buttons.forEach((b) => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+    });
+  });
+}
+
+function renderLangBlocks(data) {
+  // SELECTED_LANG が未設定（=トグル無し）の場合は従来通り両方出す
+  if (!SELECTED_LANG) {
+    return `
+      <h3>コメント（日本語）</h3>
+      <pre>${data.commentJa || "（コメントがありません）"}</pre>
+
+      <h3>Comment (English)</h3>
+      <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
+
+      <h3>改善プロンプト（日本語）</h3>
+      <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
+
+      <h3>Improved Prompt (English)</h3>
+      <pre>${data.improvedEn || "(No improved English prompt provided.)"}</pre>
+    `;
+  }
+
+  // JPのみ
+  if (SELECTED_LANG === "ja") {
+    return `
+      <h3>コメント（日本語）</h3>
+      <pre>${data.commentJa || "（コメントがありません）"}</pre>
+
+      <h3>改善プロンプト（日本語）</h3>
+      <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
+    `;
+  }
+
+  // ENのみ
+  return `
+      <h3>Comment (English)</h3>
+      <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
+
+      <h3>Improved Prompt (English)</h3>
+      <pre>${data.improvedEn || "(No improved English prompt provided.)"}</pre>
+    `;
+}
+
+// ================================
 //  Matrix Overlay (HTML)
 // ================================
 function createMatrixOverlayHTML() {
@@ -263,6 +329,8 @@ async function animateScoresSequential(container) {
 // ================================
 //  Click handler
 // ================================
+initLangToggle();
+
 document.getElementById("send-btn").addEventListener("click", async () => {
   const prompt = document.getElementById("prompt-input").value;
   const resultDiv = document.getElementById("result");
@@ -295,11 +363,23 @@ document.getElementById("send-btn").addEventListener("click", async () => {
   const minShowMs = 300;
 
   try {
-    const response = await fetch(`${API_BASE}/score`, {
+    // lang を送る（バックエンド未対応なら 422 などで落ちる可能性があるのでリトライを用意）
+    const payload = SELECTED_LANG ? { prompt, lang: SELECTED_LANG } : { prompt };
+
+    let response = await fetch(`${API_BASE}/score`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify(payload),
     });
+
+    // 互換リトライ（lang未対応バックエンド向け）
+    if (!response.ok && SELECTED_LANG && (response.status === 400 || response.status === 422)) {
+      response = await fetch(`${API_BASE}/score`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+    }
 
     // ローダーが一瞬で消えないように
     const elapsed = performance.now() - startedAt;
@@ -365,17 +445,7 @@ document.getElementById("send-btn").addEventListener("click", async () => {
         </div>
       </div>
 
-      <h3>コメント（日本語）</h3>
-      <pre>${data.commentJa || "（コメントがありません）"}</pre>
-
-      <h3>Comment (English)</h3>
-      <pre>${data.commentEn || "(No English commentary provided.)"}</pre>
-
-      <h3>改善プロンプト（日本語）</h3>
-      <pre>${data.improvedJa || "（改善プロンプトがありません）"}</pre>
-
-      <h3>Improved Prompt (English)</h3>
-      <pre>${data.improvedEn || "(No improved English prompt provided.)"}</pre>
+      ${renderLangBlocks(data)}
 
       <details style="margin-top:12px;">
         <summary>Debug: raw JSON</summary>

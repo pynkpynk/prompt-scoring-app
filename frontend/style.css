@@ -54,6 +54,38 @@ body {
   color: #60a5fa;
 }
 
+/* Language Toggle */
+.lang-toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lang-btn {
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: rgba(2, 6, 23, 0.55);
+  color: rgba(187, 247, 208, 0.9);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: "Press Start 2P", system-ui;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 0 rgba(34,197,94,0);
+  transition: transform 0.08s ease-out, box-shadow 0.12s ease-out, filter 0.12s ease-out;
+}
+
+.lang-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.lang-btn.is-active {
+  background: rgba(34, 197, 94, 0.14);
+  border-color: rgba(34, 197, 94, 0.85);
+  box-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
+}
+
 /* 入力エリア */
 .label-title {
   display: block;
