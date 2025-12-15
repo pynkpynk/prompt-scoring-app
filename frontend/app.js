@@ -47,6 +47,7 @@ const I18N_OVERRIDES = {
   en: {
     // subtitle etc. are handled in applyLanguageToStaticUI
   },
+  
 };
 
 function hasJaChars(s) {
@@ -123,7 +124,7 @@ function applyLanguageToStaticUI(lang) {
         'あなたのプロンプトを <span>5軸スコアリング</span> ＋ フィードバックと改善プロンプト';
     } else if (lang === "fr") {
       subtitle.innerHTML =
-        'Évaluez vos prompts sur <span>5 dimensions</span> avec un retour et un prompt amélioré';
+        'Évaluez vos prompts sur <span>5 critères</span> avec une analyse précise et un prompt amélioré';
     } else {
       subtitle.innerHTML = subtitle.dataset.i18nHtml;
     }
