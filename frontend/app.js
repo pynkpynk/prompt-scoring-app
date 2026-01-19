@@ -121,10 +121,10 @@ function applyLanguageToStaticUI(lang) {
     // (ADDED) subtitle is single-language in HTML → translate here
     if (lang === "ja") {
       subtitle.innerHTML =
-        'あなたのプロンプトを <span>5軸スコアリング</span> ＋ フィードバックと改善プロンプト';
+        'あなたのプロンプトを <span>6軸スコアリング</span> ＋ フィードバックと改善プロンプト';
     } else if (lang === "fr") {
       subtitle.innerHTML =
-        'Évaluez vos prompts sur <span>5 critères</span> avec une analyse précise et un prompt amélioré';
+        'Évaluez vos prompts sur <span>6 critères</span> avec une analyse précise et un prompt amélioré';
     } else {
       subtitle.innerHTML = subtitle.dataset.i18nHtml;
     }
