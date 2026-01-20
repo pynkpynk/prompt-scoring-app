@@ -1,5 +1,8 @@
 import json
 import os
+import time
+import hashlib
+from collections import OrderedDict
 from typing import Any, Dict, Optional, Literal
 
 from openai import OpenAI
@@ -16,126 +19,51 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 # デフォルトで使うモデル（通常利用向け）
-MODEL_NAME = "gpt-5-mini"
+MODEL_NAME = os.environ.get("OPENAI_MODEL", "gpt-5-mini")
+PROMPT_VERSION = "v2"
+MAX_TOKENS = 600
+GPT5_MAX_COMPLETION_TOKENS_DEFAULT = 1600
+GPT5_MAX_COMPLETION_TOKENS_CAP = 4096
+GPT5_REASONING_EFFORT_DEFAULT = "minimal"
+GPT5_REASONING_EFFORT_ALLOWED = {"minimal", "low", "medium", "high"}
+
+CACHE_TTL_SECONDS = 60 * 60 * 24
+CACHE_MAX_ENTRIES = 200
+_CACHE: "OrderedDict[str, Dict[str, Any]]" = OrderedDict()
 
 SYSTEM_PROMPT = """
-You are an expert prompt engineer and prompt quality evaluator.
+You are an expert prompt-quality evaluator.
 
-You MUST always respond with a single valid JSON object and nothing else.
-- Do NOT add any explanation before or after the JSON.
-- Do NOT wrap the JSON in code fences (no ```json).
-- All natural language text MUST be inside JSON string values.
-- Markdown is allowed inside string values, but the overall response must remain valid JSON.
-
-# 0) Core principle
+Return a single valid JSON object and nothing else (no extra text, no code fences).
+All natural language must be inside JSON string values.
 
 Judge the prompt as instructions for an LLM (NOT the domain topic quality).
-Do NOT reward verbosity. Prefer precision and testability.
+Do not reward verbosity; prefer precision and testability.
 
-# 1) Inputs
+Task (target lang in {"en","ja","fr"}, default "en"):
+- Score 6 metrics (0–100 integers; independent): clarity, specificity, constraints, intent, safety, evaluability.
+- Provide overall score (0–100 integer), not an average.
+- Provide comment_* and improved_prompt_* strings.
+- Fill ONLY the target language fields; set all other language fields to "".
+- Length limits: comment <= 450 chars, improved_prompt <= 900 chars.
 
-You will receive:
-- A single user prompt (in any language).
-- A target output language in {"en","ja","fr"}.
-If the target language is not explicitly provided, assume "en".
+Metric reminders:
+clarity: unambiguous, easy to follow.
+specificity: concrete details/context.
+constraints: explicit rules/format/bounds.
+intent: objective and success criteria.
+safety: no harmful/illegal/confidential intent.
+evaluability: output can be checked against explicit criteria/tests.
 
-# 2) Tasks
+Feedback comment (target language):
+- 2–5 concise sentences: strengths + actionable improvements.
+- Then 1–2 bullet strengths + 2–4 bullet improvements.
 
-Given the user prompt, you must:
-1) score it on 6 metrics (0–100 integers; score each independently; do NOT average),
-2) provide feedback comment in the target language ONLY,
-3) provide an improved prompt in the target language ONLY,
-4) return empty strings for all other languages (to reduce output tokens).
+Improved prompt (target language):
+- Preserve intent/requirements; add only minimal assumptions to resolve ambiguity.
+- Make it directly usable as LLM instructions.
 
-# 3) METRICS (0–100 integers; score each independently; do NOT average)
-
-Global anchors (apply to all metrics):
-- 0–19  : Unusable; missing/contradictory; cannot act without major clarification
-- 20–39 : Very under-specified; high risk of wrong or inconsistent outputs
-- 40–59 : Partially usable; clear gaps remain (format/constraints/context)
-- 60–79 : Usable; minor ambiguities or missing edge-case constraints
-- 80–100: Strong; precise, structured, and robust; low variance across runs
-
-1) clarity — How unambiguous and easy to follow the instructions are.
-High if: clear task, defined scope, minimal ambiguity, simple structure.
-Low if: vague verbs (“do it”, “tell me”), unclear references, mixed goals, contradictions.
-
-2) specificity — How much concrete detail guides a high-quality answer.
-High if: includes context, target audience, examples or key details needed to execute well.
-Low if: lacks necessary background, leaves key parameters unspecified, invites generic answers.
-
-3) constraints — How explicit the requirements and bounds are.
-High if: explicit output format, must/avoid rules, length/detail level, tone, sources/citations, tool limits.
-Low if: no format requirements, no must/avoid rules, no boundaries, no acceptance criteria.
-Note: “constraints” = rules/bounds; “specificity” = content detail. Do not conflate.
-
-4) intent — How clearly the desired outcome is defined.
-High if: objective and success criteria are clear (what “done” looks like).
-Low if: unclear purpose, unclear deliverable, or competing objectives without prioritization.
-
-5) safety — How safe/responsible the requested behavior is.
-High if: no harmful/illegal/policy-violating intent; sensitive areas handled cautiously (privacy, medical, legal).
-Low if: requests wrongdoing, exploitation, hate/harassment, explicit personal data, or unsafe instructions.
-
-6) evaluability / verifiability — How easily the output can be checked against explicit criteria.
-High if: output can be validated with clear checks such as:
-- output schema/format with required fields/sections,
-- checklists / acceptance criteria / success conditions,
-- test cases, examples of correct vs incorrect,
-- required citations/traceability, explicit validation steps.
-Low if: “good/better/nice” is subjective with no pass/fail criteria, or no way to confirm compliance.
-Note: evaluability focuses on checkability; constraints focuses on rules/bounds. A prompt can have constraints but still be hard to verify.
-
-# 4) Overall score (holistic, independent)
-
-You must output "overall" as an independent holistic score (0–100 integer).
-"overall" is NOT a mathematical average.
-It should reflect how reliable, usable, and practical the prompt is for real LLM usage,
-including expected variance across runs and how robustly it guides a good answer.
-
-# 5) Language + cost-saving output rules (VERY IMPORTANT)
-
-To reduce token output cost:
-- Always include ALL language fields in the JSON.
-- Fill ONLY the target language fields with content.
-- Set every other language field to an empty string "".
-
-Target language mapping:
-- If target language is "en":
-  - fill: comment_en, improved_prompt_en
-  - set to "": comment_ja, comment_fr, improved_prompt_ja, improved_prompt_fr
-- If target language is "ja":
-  - fill: comment_ja, improved_prompt_ja
-  - set to "": comment_en, comment_fr, improved_prompt_en, improved_prompt_fr
-- If target language is "fr":
-  - fill: comment_fr, improved_prompt_fr
-  - set to "": comment_en, comment_ja, improved_prompt_en, improved_prompt_ja
-
-# 6) Feedback comment format (target language)
-
-Provide feedback about the ORIGINAL prompt:
-1) 2–5 concise sentences:
-   - briefly summarize main strengths,
-   - give concrete, actionable improvement tips (prioritize precision + testability).
-2) Then a short Markdown bullet list:
-   - 1–2 bullets for strengths
-   - 2–4 bullets for improvement points
-
-Do NOT evaluate the user's domain content; only critique the prompt as an instruction to an LLM.
-
-# 7) Improved prompt requirements (target language)
-
-Rewrite the user's prompt into ONE improved prompt string in the target language.
-Requirements:
-- Preserve all explicit requirements, constraints, and important details from the original.
-- Preserve the underlying intent; do NOT change the task or add new goals.
-- Add minimal, reasonable assumptions ONLY when necessary to resolve ambiguity.
-- Make it directly usable as LLM instructions (no meta-comments like “improved prompt”).
-- Markdown is allowed inside the string if it improves structure and evaluability.
-
-# 8) Output JSON schema (exact keys, no trailing commas)
-
-You MUST output JSON ONLY, with exactly these keys:
+Output JSON ONLY with exactly these keys:
 
 {
   "clarity": number,
@@ -169,34 +97,28 @@ def _normalize_lang(lang: Optional[str]) -> str:
 def _lang_override_system_prompt(lang: str) -> str:
     # NOTE: Keep this short; it is an override for speed + schema control.
     return f"""
-OVERRIDE (performance + i18n):
-- The caller lang is "{lang}".
-- Generate ONLY the requested language for comment/improved_prompt to reduce latency.
-- For non-requested languages, set the fields to empty string "".
-- Ignore any earlier instruction that restricts the key set; use the schema below.
-
-Rules:
-- If lang=="en": fill comment_en and improved_prompt_en; set comment_ja, improved_prompt_ja, comment_fr, improved_prompt_fr to "".
-- If lang=="ja": fill comment_ja and improved_prompt_ja; set comment_en, improved_prompt_en, comment_fr, improved_prompt_fr to "".
-- If lang=="fr": fill comment_fr and improved_prompt_fr; set comment_en, improved_prompt_en, comment_ja, improved_prompt_ja to "".
-- Keep comment_* and improved_prompt_* concise.
-
-Output JSON ONLY with exactly these keys:
-{{
-  "clarity": number,
-  "specificity": number,
-  "constraints": number,
-  "intent": number,
-  "safety": number,
-  "overall": number,
-  "comment_en": "string",
-  "comment_ja": "string",
-  "comment_fr": "string",
-  "improved_prompt_ja": "string",
-  "improved_prompt_en": "string",
-  "improved_prompt_fr": "string"
-}}
+OVERRIDE:
+- Target language: "{lang}".
+- Fill ONLY that language's comment_* and improved_prompt_*; set all others to "".
+- Enforce length limits: comment <= 450 chars, improved_prompt <= 900 chars.
+- Follow the schema from the main system prompt; do not change keys (includes evaluability).
 """.strip()
+
+
+def _cache_key(prompt: str, lang: str, model: str) -> str:
+    base = f"{PROMPT_VERSION}|{model}|{lang}|{prompt}"
+    return hashlib.sha256(base.encode("utf-8")).hexdigest()
+
+
+def _cache_prune(now: float) -> None:
+    expired = []
+    for k, v in _CACHE.items():
+        if now - float(v.get("ts", 0)) > CACHE_TTL_SECONDS:
+            expired.append(k)
+    for k in expired:
+        _CACHE.pop(k, None)
+    while len(_CACHE) > CACHE_MAX_ENTRIES:
+        _CACHE.popitem(last=False)
 
 
 def _parse_json_text(text: str) -> Dict[str, Any]:
@@ -236,50 +158,108 @@ def call_llm_for_scoring(
     user_prompt: str,
     model_name: str | None = None,
     lang: Optional[LangLiteral] = None,
-) -> Dict[str, Any]:
+) -> tuple[Dict[str, Any], Dict[str, int], bool, str]:
     
     model = model_name or MODEL_NAME
     lang_norm = _normalize_lang(lang)
+    now = time.time()
+    cache_key = _cache_key(user_prompt, lang_norm, model)
 
-    response = client.chat.completions.create(
-        model=model,
-        response_format={"type": "json_object"},
-        messages=[
+    _cache_prune(now)
+    cached = _CACHE.get(cache_key)
+    if cached:
+        _CACHE.move_to_end(cache_key)
+        data = cached.get("data")
+        if isinstance(data, dict):
+            return data, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, True, model
+
+    completion_kwargs = {
+        "model": model,
+        "response_format": {"type": "json_object"},
+        "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "system", "content": _lang_override_system_prompt(lang_norm)},
             {"role": "user", "content": user_prompt},
         ],
-    )
-
-    message = response.choices[0].message
-    content = message.content
-
-    if isinstance(content, str):
-        text = content
-    elif isinstance(content, list):
-        parts = []
-        for part in content:
-            if getattr(part, "type", None) == "text":
-                t = getattr(getattr(part, "text", None), "value", None)
-                if isinstance(t, str):
-                    parts.append(t)
-        text = "".join(parts)
+    }
+    if model.startswith("gpt-5"):
+        effort = os.environ.get("PSA_REASONING_EFFORT", GPT5_REASONING_EFFORT_DEFAULT).strip().lower()
+        if effort not in GPT5_REASONING_EFFORT_ALLOWED:
+            effort = GPT5_REASONING_EFFORT_DEFAULT
+        completion_kwargs["reasoning_effort"] = effort
+        max_completion = os.environ.get("PSA_MAX_COMPLETION_TOKENS_GPT5", "")
+        try:
+            max_completion_tokens = int(max_completion)
+        except (TypeError, ValueError):
+            max_completion_tokens = GPT5_MAX_COMPLETION_TOKENS_DEFAULT
+        completion_kwargs["max_completion_tokens"] = max_completion_tokens
     else:
-        text = ""
+        completion_kwargs["temperature"] = 0
+        completion_kwargs["max_tokens"] = MAX_TOKENS
+
+    def extract_text(resp: Any) -> str:
+        message = resp.choices[0].message
+        content = message.content
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if getattr(part, "type", None) == "text":
+                    t = getattr(getattr(part, "text", None), "value", None)
+                    if isinstance(t, str):
+                        parts.append(t)
+            return "".join(parts)
+        return ""
+
+    def call_once() -> Any:
+        return client.chat.completions.create(**completion_kwargs)
+
+    try:
+        response = call_once()
+    except Exception as e:
+        msg = str(e).lower()
+        if "temperature" in msg and "default (1)" in msg and "temperature" in completion_kwargs:
+            completion_kwargs.pop("temperature", None)
+            response = call_once()
+        else:
+            raise
+
+    text = extract_text(response)
+    if not text or text.strip() == "":
+        if model.startswith("gpt-5"):
+            current_max = int(completion_kwargs.get("max_completion_tokens", GPT5_MAX_COMPLETION_TOKENS_DEFAULT))
+            bumped = min(current_max * 2, GPT5_MAX_COMPLETION_TOKENS_CAP)
+            completion_kwargs["max_completion_tokens"] = bumped
+            completion_kwargs["reasoning_effort"] = GPT5_REASONING_EFFORT_DEFAULT
+            response = call_once()
+            text = extract_text(response)
 
     if not text or text.strip() == "":
         raise ValueError("LLM returned empty content (only whitespace)")
 
-    return _parse_json_text(text)
+    data = _parse_json_text(text)
+
+    usage_obj = getattr(response, "usage", None)
+    usage = {
+        "prompt_tokens": int(getattr(usage_obj, "prompt_tokens", 0) or 0),
+        "completion_tokens": int(getattr(usage_obj, "completion_tokens", 0) or 0),
+        "total_tokens": int(getattr(usage_obj, "total_tokens", 0) or 0),
+    }
+
+    _CACHE[cache_key] = {"ts": now, "data": data, "usage": usage}
+    _cache_prune(now)
+
+    return data, usage, False, model
 
 
 def score_prompt_with_llm(
     user_prompt: str,
     model_name: str | None = None,
     lang: Optional[LangLiteral] = None,
-) -> PromptScore:
+) -> tuple[PromptScore, Dict[str, int], bool, str]:
     
-    data = call_llm_for_scoring(
+    data, usage, cache_hit, model = call_llm_for_scoring(
         user_prompt=user_prompt,
         model_name=model_name,
         lang=lang,
@@ -299,6 +279,7 @@ def score_prompt_with_llm(
         constraints=to_int_0_100(data.get("constraints")),
         intent=to_int_0_100(data.get("intent")),
         safety=to_int_0_100(data.get("safety")),
+        evaluability=to_int_0_100(data.get("evaluability") or data.get("verifiability")),
         overall=to_int_0_100(data.get("overall")),
         comment_en=str(data.get("comment_en", "")),
         comment_ja=str(data.get("comment_ja", "")),
@@ -315,4 +296,4 @@ def score_prompt_with_llm(
     except Exception:
         pass
 
-    return PromptScore(**base_kwargs)
+    return PromptScore(**base_kwargs), usage, cache_hit, model

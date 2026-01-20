@@ -11,6 +11,7 @@ class PromptScore(BaseModel):
     constraints: int
     intent: int
     safety: int
+    evaluability: int = 0
     overall: int
     comment_en: str
     comment_ja: str

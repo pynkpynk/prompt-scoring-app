@@ -50,7 +50,7 @@ class PromptRequestWithLang(PromptRequest):
 @app.post("/score", response_model=PromptScore)
 def score_prompt(req: PromptRequest, response: Response) -> PromptScore:
     """
-    LLMを使って実際にプロンプトを5軸で採点するエンドポイント。
+    LLMを使って実際にプロンプトを6軸で採点するエンドポイント。
     """
     # timings
     t0 = time.perf_counter()
@@ -63,7 +63,7 @@ def score_prompt(req: PromptRequest, response: Response) -> PromptScore:
         # t1 = LLM開始（呼び出し直前）
         t1 = time.perf_counter()
 
-        result = score_prompt_with_llm(req.prompt, lang=req.lang)
+        result, usage, cache_hit, model_name = score_prompt_with_llm(req.prompt, lang=req.lang)
 
         # t2 = LLM終了（呼び出し直後）
         t2 = time.perf_counter()
@@ -92,6 +92,12 @@ def score_prompt(req: PromptRequest, response: Response) -> PromptScore:
         response.headers["X-PSA-LLM_MS"] = ms(t1, t2)   # LLMに要した時間
         response.headers["X-PSA-POST_MS"] = ms(t2, t3)  # 整形/後処理
         response.headers["X-PSA-TOTAL_MS"] = ms(t0, t3) # 合計
+
+        response.headers["X-PSA-MODEL"] = str(model_name)
+        response.headers["X-PSA-IN_TOKENS"] = str(usage.get("prompt_tokens", 0))
+        response.headers["X-PSA-OUT_TOKENS"] = str(usage.get("completion_tokens", 0))
+        response.headers["X-PSA-TOTAL_TOKENS"] = str(usage.get("total_tokens", 0))
+        response.headers["X-PSA-CACHE"] = "HIT" if cache_hit else "MISS"
 
         #logs (server-side)
         logger.info(
