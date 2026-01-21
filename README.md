@@ -1,4 +1,7 @@
-# Prompt Scoring App  
+_# Prompt Scoring App  
+
+**Language:** English | [日本語](README.ja.md)
+
 _An AI-powered prompt evaluation tool for everyone_
 
 **Prompt Scoring App** is a practical, production-minded prompt engineering portfolio project that evaluates prompts with an LLM in a single request.
