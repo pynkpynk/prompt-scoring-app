@@ -1,4 +1,4 @@
-_# Prompt Scoring App  
+# Prompt Scoring App  
 
 **Language:** English | [日本語](README.ja.md)
 
